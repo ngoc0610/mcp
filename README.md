@@ -59,6 +59,9 @@ For detailed installation instructions, including configuration with various MCP
 # Run the server directly
 python src/pbixray_server.py
 
+# With disabled tools for security
+python src/pbixray_server.py --disallow get_m_parameters get_power_query
+
 # OR use the MCP CLI
 mcp run src/pbixray_server.py
 ```
@@ -99,6 +102,25 @@ The server provides the following tools:
 12. **get_table_contents** - Retrieve contents of a specified table
 13. **get_statistics** - Get model statistics
 14. **get_model_summary** - Get a comprehensive model summary
+
+### Tool Security
+
+For security or privacy reasons, you may want to disable certain tools. The server includes a built-in mechanism to disable specific tools:
+
+```bash
+# Disable access to M Parameters and Power Query code
+python src/pbixray_server.py --disallow get_m_parameters get_power_query
+```
+
+When a tool is disabled:
+1. The tool still appears in the tool list, maintaining compatibility with clients
+2. Attempts to call the tool return a clear error message
+3. No underlying functionality is executed
+
+This is particularly useful when:
+- Exposing sensitive information like connection strings in M parameters
+- Restricting access to proprietary query logic
+- Setting up role-based access in multi-user environments
 
 ## Example Interactions
 
