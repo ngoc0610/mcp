@@ -250,7 +250,7 @@ def get_dax_tables(ctx: Context) -> str:
 
 
 @mcp.tool()
-def get_dax_measures(table_name: str = None, measure_name: str = None, ctx: Context) -> str:
+def get_dax_measures(ctx: Context, table_name: str = None, measure_name: str = None) -> str:
     """
     Access DAX measures in the model with optional filtering.
     
@@ -295,7 +295,7 @@ def get_dax_measures(table_name: str = None, measure_name: str = None, ctx: Cont
 
 
 @mcp.tool()
-def get_dax_columns(table_name: str = None, column_name: str = None, ctx: Context) -> str:
+def get_dax_columns(ctx: Context, table_name: str = None, column_name: str = None) -> str:
     """
     Access calculated column DAX expressions with optional filtering.
     
@@ -340,7 +340,7 @@ def get_dax_columns(table_name: str = None, column_name: str = None, ctx: Contex
 
 
 @mcp.tool()
-def get_schema(table_name: str = None, column_name: str = None, ctx: Context) -> str:
+def get_schema(ctx: Context, table_name: str = None, column_name: str = None) -> str:
     """
     Get details about the data model schema and column types with optional filtering.
     
@@ -385,7 +385,7 @@ def get_schema(table_name: str = None, column_name: str = None, ctx: Context) ->
 
 
 @mcp.tool()
-def get_relationships(from_table: str = None, to_table: str = None, ctx: Context) -> str:
+def get_relationships(ctx: Context, from_table: str = None, to_table: str = None) -> str:
     """
     Get the details about the data model relationships with optional filtering.
     
@@ -430,7 +430,7 @@ def get_relationships(from_table: str = None, to_table: str = None, ctx: Context
 
 
 @mcp.tool()
-def get_table_contents(table_name: str, page: int = 1, page_size: int = None, ctx: Context) -> str:
+def get_table_contents(ctx: Context, table_name: str, page: int = 1, page_size: int = None) -> str:
     """
     Retrieve the contents of a specified table with pagination.
     
@@ -492,7 +492,7 @@ def get_table_contents(table_name: str, page: int = 1, page_size: int = None, ct
 
 
 @mcp.tool()
-def get_statistics(table_name: str = None, column_name: str = None, ctx: Context) -> str:
+def get_statistics(ctx: Context, table_name: str = None, column_name: str = None) -> str:
     """
     Get statistics about the model with optional filtering.
     
