@@ -3,7 +3,7 @@
 PBIXRay MCP Server
 
 This MCP server exposes the capabilities of PBIXRay as tools and resources
-for LLM clients like Claude to interact with Power BI (.pbix) files.
+for LLM clients to interact with Power BI (.pbix) files.
 """
 
 import os
@@ -364,6 +364,16 @@ def get_model_summary(ctx: Context) -> str:
         return f"Error creating model summary: {str(e)}"
 
 
+def main():
+    """
+    Run the PBIXRay MCP server.
+    
+    This function is the entry point for the package and
+    can be called from command line after installation.
+    """
+    print("Starting PBIXRay MCP Server...")
+    mcp.run(transport="stdio")
+
 if __name__ == "__main__":
     # Run the server with stdio transport for MCP
-    mcp.run(transport="stdio")
+    main()

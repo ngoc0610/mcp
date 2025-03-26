@@ -15,7 +15,7 @@ from mcp import StdioServerParameters
 async def main():
     """Run the demo with the PBIXRay MCP server"""
     # Replace this with the path to your PBIX file or use the provided sample
-    sample_file_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "demo", "AdventureWorks Sales.pbix")
+    sample_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "demo", "AdventureWorks Sales.pbix")
     
     # Make sure the file exists
     if not os.path.exists(sample_file_path):
@@ -24,7 +24,7 @@ async def main():
         return
     
     # Make sure the server script exists
-    server_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pbixray_server.py")
+    server_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src", "pbixray_server.py")
     if not os.path.exists(server_path):
         print(f"Error: Server script not found at {server_path}")
         return

@@ -1,6 +1,6 @@
 # PBIXRay MCP Server
 
-A Model Context Protocol (MCP) server that exposes the capabilities of [PBIXRay](https://github.com/Hugoberry/pbixray) for LLM clients like Claude.
+A Model Context Protocol (MCP) server that exposes the capabilities of [PBIXRay](https://github.com/Hugoberry/pbixray) for LLM clients.
 
 ![PBIXRay MCP Server](https://github.com/Hugoberry/pbixray/raw/master/docs/img/logo.png)
 
@@ -28,6 +28,8 @@ The server exposes all the major features of PBIXRay as MCP tools:
 
 ## Installation
 
+### Quick Setup
+
 1. Create a virtual environment:
    ```bash
    python -m venv venv
@@ -39,61 +41,65 @@ The server exposes all the major features of PBIXRay as MCP tools:
    pip install mcp pbixray numpy
    ```
 
+3. Run the server:
+   ```bash
+   python src/pbixray_server.py
+   ```
+
+For detailed installation instructions, including configuration with various MCP clients, see [INSTALLATION.md](INSTALLATION.md).
+
 ## Usage
 
-### Running the server
+### Running the Server
 
 ```bash
 # Run the server directly
-python pbixray_server.py
+python src/pbixray_server.py
 
 # OR use the MCP CLI
-mcp run pbixray_server.py
+mcp run src/pbixray_server.py
 ```
 
-### Testing with sample files
+### Testing with Sample Files
 
 The repository includes a test script that demonstrates how to interact with the server using a sample PBIX file:
 
 ```bash
-python test_with_sample.py
+python tests/test_with_sample.py
 ```
 
 This will load and analyze an AdventureWorks sample PBIX file, showing how to retrieve tables, measures, relationships, and other metadata.
 
-### Installing in Claude Desktop
+### Interactive Demo
 
-To use this server with Claude Desktop, edit the Claude configuration file:
+Try the interactive demo to explore all features:
 
-On macOS:
-```json
-// ~/Library/Application Support/Claude/claude_desktop_config.json
-{
-  "mcpServers": {
-    "pbixray": {
-      "command": "python",
-      "args": ["/path/to/pbixray_server.py"]
-    }
-  }
-}
+```bash
+python examples/demo.py
 ```
 
-On Windows:
-```json
-// %APPDATA%\Claude\claude_desktop_config.json
-{
-  "mcpServers": {
-    "pbixray": {
-      "command": "python",
-      "args": ["C:\\path\\to\\pbixray_server.py"]
-    }
-  }
-}
-```
+## Tool Overview
 
-### Example interactions
+The server provides the following tools:
 
-With the server running in Claude, you can ask questions like:
+1. **load_pbix_file** - Load a Power BI file for analysis
+2. **get_tables** - List all tables in the model
+3. **get_metadata** - Get model metadata
+4. **get_power_query** - Display Power Query (M) code
+5. **get_m_parameters** - Display M Parameters values
+6. **get_model_size** - Get the model size in bytes
+7. **get_dax_tables** - View DAX calculated tables
+8. **get_dax_measures** - Access DAX measures
+9. **get_dax_columns** - Access calculated column DAX expressions
+10. **get_schema** - Get model schema details
+11. **get_relationships** - View table relationships
+12. **get_table_contents** - Retrieve contents of a specified table
+13. **get_statistics** - Get model statistics
+14. **get_model_summary** - Get a comprehensive model summary
+
+## Example Interactions
+
+With the server running in an MCP client, you can ask questions like:
 
 - "Can you help me load and analyze my Power BI file at /path/to/report.pbix?"
 - "What tables are in my Power BI model?"
@@ -102,14 +108,100 @@ With the server running in Claude, you can ask questions like:
 - "How large is my Power BI model?"
 - "What Power Query transformations are used in this model?"
 
-Claude will use the appropriate tools to retrieve and present the information.
+Your LLM client will use the appropriate tools to retrieve and present the information.
+
+## Using with Windows Subsystem for Linux (WSL)
+
+When using the PBIXRay MCP Server in WSL with Claude Desktop on Windows, you need to be aware of path differences when loading PBIX files.
+
+### Path Conversion Guidelines
+
+Windows paths (like `C:\Users\name\file.pbix`) cannot be directly accessed in WSL. Instead:
+
+1. **Use WSL paths** when referencing files:
+   - Windows: `C:\Users\name\Downloads\file.pbix`
+   - WSL: `/mnt/c/Users/name/Downloads/file.pbix`
+
+2. **Copy files to WSL** for easier access:
+   ```bash
+   mkdir -p ~/dev/pbixray-mcp/data
+   cp /mnt/c/Users/name/Downloads/file.pbix ~/dev/pbixray-mcp/data/
+   ```
+   Then use: `/home/username/dev/pbixray-mcp/data/file.pbix`
+
+3. **Example conversion table**:
+   | Windows Path | WSL Path |
+   |--------------|----------|
+   | `C:\Users\Documents\file.pbix` | `/mnt/c/Users/Documents/file.pbix` |
+   | `D:\Data\PowerBI\file.pbix` | `/mnt/d/Data/PowerBI/file.pbix` |
+
+### Configuring Claude Desktop with WSL
+
+When configuring Claude Desktop to use the server from WSL, use a launcher script:
+
+1. Create a `run_server.sh` script in your project root:
+   ```bash
+   #!/bin/bash
+   cd "$(dirname "$0")"
+   source venv/bin/activate
+   python src/pbixray_server.py
+   ```
+
+2. Make it executable:
+   ```bash
+   chmod +x run_server.sh
+   ```
+
+3. Configure Claude Desktop with:
+   ```json
+   "pbixray": {
+     "command": "wsl.exe",
+     "args": [
+       "bash",
+       "-c",
+       "/home/username/dev/pbixray-mcp/run_server.sh"
+     ]
+   }
+   ```
 
 ## Development
+
+### Development Mode
 
 To test the server during development, use the MCP Inspector:
 
 ```bash
-mcp dev pbixray_server.py
+mcp dev src/pbixray_server.py
 ```
 
 This starts an interactive session where you can call tools and test responses.
+
+### Project Structure
+
+```
+pbixray-mcp/
+├── README.md            - This file
+├── INSTALLATION.md      - Detailed installation instructions
+├── src/                 - Source code
+│   ├── __init__.py
+│   └── pbixray_server.py
+├── tests/               - Test scripts
+│   ├── __init__.py
+│   └── test_with_sample.py
+├── examples/            - Example scripts and configs
+│   ├── demo.py
+│   └── config/
+├── demo/                - Sample PBIX files
+│   ├── README.md
+│   └── AdventureWorks Sales.pbix
+└── docs/                - Additional documentation
+    └── ROADMAP.md
+```
+
+## Contributing
+
+Contributions are welcome! Please see the [ROADMAP.md](docs/ROADMAP.md) for planned improvements and areas where help is needed.
+
+## License
+
+[MIT License](LICENSE)
