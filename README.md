@@ -1,10 +1,11 @@
 # PBIXRay MCP Server
 
-Credits to Hugoberry https://github.com/Hugoberry/pbixray
+## Credits
+* Hugoberry https://github.com/Hugoberry/pbixray
+* rusiaaman https://github.com/rusiaaman/wcgw
+* This was fully written by Claude using wcgw
 
 A Model Context Protocol (MCP) server that exposes the capabilities of [PBIXRay](https://github.com/Hugoberry/pbixray) for LLM clients.
-
-![PBIXRay MCP Server](https://github.com/Hugoberry/pbixray/raw/master/docs/img/logo.png)
 
 ## Overview
 
