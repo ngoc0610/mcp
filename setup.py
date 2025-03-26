@@ -30,11 +30,12 @@ setup(
         "Topic :: Office/Business :: Office Suites",
         "Topic :: Scientific/Engineering :: Visualization",
     ],
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     install_requires=[
         "mcp>=1.2.0",
         "pbixray>=0.1.0",
         "numpy>=1.20.0",
+        "pandas>=1.0.0",
     ],
     entry_points={
         "console_scripts": [
