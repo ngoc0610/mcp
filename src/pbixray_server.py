@@ -9,11 +9,24 @@ for LLM clients to interact with Power BI (.pbix) files.
 import os
 import json
 import numpy as np
-from typing import Optional, Dict, Any, List, Union
+import argparse
+import functools
+import sys
+from typing import Optional, Dict, Any, List, Union, Callable
 from pathlib import Path
 
 from mcp.server.fastmcp import FastMCP, Context, Image
 from pbixray import PBIXRay
+
+# Parse command line arguments
+def parse_args():
+    parser = argparse.ArgumentParser(description='PBIXRay MCP Server')
+    parser.add_argument('--disallow', nargs='+', help='Specify tools to disable', default=[])
+    return parser.parse_args()
+
+# Get disallowed tools from command line
+args = parse_args()
+disallowed_tools = args.disallow
 
 # Custom JSON encoder to handle NumPy arrays and other non-serializable types
 class NumpyEncoder(json.JSONEncoder):
@@ -30,6 +43,41 @@ class NumpyEncoder(json.JSONEncoder):
 
 # Initialize the MCP server
 mcp = FastMCP("PBIXRay")
+
+# Store the original tool decorator
+original_tool_decorator = mcp.tool
+
+# Create a secure wrapper for tool registration
+def secure_tool(*args, **kwargs):
+    """
+    Decorator that wraps the original FastMCP tool decorator to check if a tool
+    is allowed to run before executing it.
+    """
+    # Get the original decorator
+    original_decorator = original_tool_decorator(*args, **kwargs)
+    
+    # Create a new decorator that wraps the original
+    def new_decorator(func):
+        # Get the tool name from the function name
+        tool_name = func.__name__
+        
+        # Check if this tool is disallowed
+        if tool_name in disallowed_tools:
+            # Create a replacement function that returns an error message
+            @functools.wraps(func)
+            def disabled_tool(*f_args, **f_kwargs):
+                return f"Error: The tool '{tool_name}' has been disabled by the server administrator."
+            
+            # Register the disabled tool with the original decorator
+            return original_decorator(disabled_tool)
+        else:
+            # If the tool is allowed, just use the original decorator
+            return original_decorator(func)
+    
+    return new_decorator
+
+# Replace the original tool decorator with our secure version
+mcp.tool = secure_tool
 
 # Global variable to store the currently loaded model
 current_model: Optional[PBIXRay] = None
@@ -372,6 +420,10 @@ def main():
     can be called from command line after installation.
     """
     print("Starting PBIXRay MCP Server...")
+    
+    if disallowed_tools:
+        print(f"Security: Disallowed tools: {', '.join(disallowed_tools)}")
+    
     mcp.run(transport="stdio")
 
 if __name__ == "__main__":
