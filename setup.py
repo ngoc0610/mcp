@@ -35,7 +35,9 @@ setup(
         "mcp>=1.2.0",
         "pbixray>=0.1.0",
         "numpy>=1.20.0",
-        "pandas>=1.0.0",
+        # Different pandas versions depending on Python version
+        "pandas>=1.0.0,<2.0.0; python_version < '3.10'",
+        "pandas>=1.0.0; python_version >= '3.10'",
     ],
     entry_points={
         "console_scripts": [
