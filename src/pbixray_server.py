@@ -22,11 +22,15 @@ from pbixray import PBIXRay
 def parse_args():
     parser = argparse.ArgumentParser(description='PBIXRay MCP Server')
     parser.add_argument('--disallow', nargs='+', help='Specify tools to disable', default=[])
+    parser.add_argument('--max-rows', type=int, default=100, help='Maximum rows to return for table data (default: 100)')
+    parser.add_argument('--page-size', type=int, default=20, help='Default page size for paginated results (default: 20)')
     return parser.parse_args()
 
-# Get disallowed tools from command line
+# Get command line arguments
 args = parse_args()
 disallowed_tools = args.disallow
+MAX_ROWS = args.max_rows
+PAGE_SIZE = args.page_size
 
 # Custom JSON encoder to handle NumPy arrays and other non-serializable types
 class NumpyEncoder(json.JSONEncoder):
@@ -246,9 +250,13 @@ def get_dax_tables(ctx: Context) -> str:
 
 
 @mcp.tool()
-def get_dax_measures(ctx: Context) -> str:
+def get_dax_measures(table_name: str = None, measure_name: str = None, ctx: Context) -> str:
     """
-    Access DAX measures in the model.
+    Access DAX measures in the model with optional filtering.
+    
+    Args:
+        table_name: Optional filter for measures from a specific table
+        measure_name: Optional filter for a specific measure by name
     
     Returns:
         A list of DAX measures with names, expressions, and other metadata
@@ -259,7 +267,27 @@ def get_dax_measures(ctx: Context) -> str:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
     
     try:
+        # Get all measures
         dax_measures = current_model.dax_measures
+        
+        # Apply table filter if specified
+        if table_name:
+            dax_measures = dax_measures[dax_measures['TableName'] == table_name]
+            
+        # Apply measure name filter if specified
+        if measure_name:
+            dax_measures = dax_measures[dax_measures['Name'] == measure_name]
+            
+        # Return message if no measures match the filters
+        if len(dax_measures) == 0:
+            filters = []
+            if table_name:
+                filters.append(f"table '{table_name}'")
+            if measure_name:
+                filters.append(f"name '{measure_name}'")
+            filter_text = " and ".join(filters)
+            return f"No measures found with {filter_text}."
+        
         return dax_measures.to_json(orient="records", indent=2)
     except Exception as e:
         ctx.info(f"Error retrieving DAX measures: {str(e)}")
@@ -267,9 +295,13 @@ def get_dax_measures(ctx: Context) -> str:
 
 
 @mcp.tool()
-def get_dax_columns(ctx: Context) -> str:
+def get_dax_columns(table_name: str = None, column_name: str = None, ctx: Context) -> str:
     """
-    Access calculated column DAX expressions.
+    Access calculated column DAX expressions with optional filtering.
+    
+    Args:
+        table_name: Optional filter for columns from a specific table
+        column_name: Optional filter for a specific column by name
     
     Returns:
         A list of calculated columns with names and expressions
@@ -280,7 +312,27 @@ def get_dax_columns(ctx: Context) -> str:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
     
     try:
+        # Get all calculated columns
         dax_columns = current_model.dax_columns
+        
+        # Apply table filter if specified
+        if table_name:
+            dax_columns = dax_columns[dax_columns['TableName'] == table_name]
+            
+        # Apply column name filter if specified
+        if column_name:
+            dax_columns = dax_columns[dax_columns['ColumnName'] == column_name]
+            
+        # Return message if no columns match the filters
+        if len(dax_columns) == 0:
+            filters = []
+            if table_name:
+                filters.append(f"table '{table_name}'")
+            if column_name:
+                filters.append(f"name '{column_name}'")
+            filter_text = " and ".join(filters)
+            return f"No calculated columns found with {filter_text}."
+        
         return dax_columns.to_json(orient="records", indent=2)
     except Exception as e:
         ctx.info(f"Error retrieving DAX columns: {str(e)}")
@@ -288,9 +340,13 @@ def get_dax_columns(ctx: Context) -> str:
 
 
 @mcp.tool()
-def get_schema(ctx: Context) -> str:
+def get_schema(table_name: str = None, column_name: str = None, ctx: Context) -> str:
     """
-    Get details about the data model schema and column types.
+    Get details about the data model schema and column types with optional filtering.
+    
+    Args:
+        table_name: Optional filter for columns from a specific table
+        column_name: Optional filter for a specific column by name
     
     Returns:
         A description of the schema with table names, column names, and data types
@@ -301,7 +357,27 @@ def get_schema(ctx: Context) -> str:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
     
     try:
+        # Get the complete schema
         schema = current_model.schema
+        
+        # Apply table filter if specified
+        if table_name:
+            schema = schema[schema['TableName'] == table_name]
+            
+        # Apply column filter if specified
+        if column_name:
+            schema = schema[schema['ColumnName'] == column_name]
+            
+        # Return message if no columns match the filters
+        if len(schema) == 0:
+            filters = []
+            if table_name:
+                filters.append(f"table '{table_name}'")
+            if column_name:
+                filters.append(f"column '{column_name}'")
+            filter_text = " and ".join(filters)
+            return f"No schema entries found with {filter_text}."
+        
         return schema.to_json(orient="records", indent=2)
     except Exception as e:
         ctx.info(f"Error retrieving schema: {str(e)}")
@@ -309,9 +385,13 @@ def get_schema(ctx: Context) -> str:
 
 
 @mcp.tool()
-def get_relationships(ctx: Context) -> str:
+def get_relationships(from_table: str = None, to_table: str = None, ctx: Context) -> str:
     """
-    Get the details about the data model relationships.
+    Get the details about the data model relationships with optional filtering.
+    
+    Args:
+        from_table: Optional filter for relationships from a specific table
+        to_table: Optional filter for relationships to a specific table
     
     Returns:
         A description of the relationships between tables in the model
@@ -322,7 +402,27 @@ def get_relationships(ctx: Context) -> str:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
     
     try:
+        # Get all relationships
         relationships = current_model.relationships
+        
+        # Apply from_table filter if specified
+        if from_table:
+            relationships = relationships[relationships['FromTableName'] == from_table]
+            
+        # Apply to_table filter if specified
+        if to_table:
+            relationships = relationships[relationships['ToTableName'] == to_table]
+            
+        # Return message if no relationships match the filters
+        if len(relationships) == 0:
+            filters = []
+            if from_table:
+                filters.append(f"from table '{from_table}'")
+            if to_table:
+                filters.append(f"to table '{to_table}'")
+            filter_text = " and ".join(filters)
+            return f"No relationships found {filter_text}."
+        
         return relationships.to_json(orient="records", indent=2)
     except Exception as e:
         ctx.info(f"Error retrieving relationships: {str(e)}")
@@ -330,15 +430,17 @@ def get_relationships(ctx: Context) -> str:
 
 
 @mcp.tool()
-def get_table_contents(table_name: str, ctx: Context) -> str:
+def get_table_contents(table_name: str, page: int = 1, page_size: int = None, ctx: Context) -> str:
     """
-    Retrieve the contents of a specified table.
+    Retrieve the contents of a specified table with pagination.
     
     Args:
         table_name: Name of the table to retrieve
+        page: Page number to retrieve (starting from 1)
+        page_size: Number of rows per page (defaults to value from --page-size)
     
     Returns:
-        The table contents in JSON format
+        The table contents in JSON format with pagination metadata
     """
     global current_model
     
@@ -346,23 +448,57 @@ def get_table_contents(table_name: str, ctx: Context) -> str:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
     
     try:
+        # Use command-line page size if not specified
+        if page_size is None:
+            page_size = PAGE_SIZE
+            
+        # Validate pagination parameters
+        if page < 1:
+            return "Error: Page number must be 1 or greater."
+        if page_size < 1:
+            return "Error: Page size must be 1 or greater."
+            
         table_contents = current_model.get_table(table_name)
-        # Limit the number of rows to prevent excessive output
-        MAX_ROWS = 100
-        if len(table_contents) > MAX_ROWS:
-            ctx.info(f"Table has {len(table_contents)} rows. Returning first {MAX_ROWS} rows.")
-            table_contents = table_contents.head(MAX_ROWS)
+        total_rows = len(table_contents)
+        total_pages = (total_rows + page_size - 1) // page_size
         
-        return table_contents.to_json(orient="records", indent=2)
+        # Calculate indices for requested page
+        start_idx = (page - 1) * page_size
+        end_idx = min(start_idx + page_size, total_rows)
+        
+        # Check if requested page exists
+        if start_idx >= total_rows:
+            return f"Error: Page {page} does not exist. The table has {total_pages} page(s)."
+        
+        # Get the requested page of data
+        page_data = table_contents.iloc[start_idx:end_idx]
+        
+        # Create response with pagination metadata
+        response = {
+            "pagination": {
+                "total_rows": total_rows,
+                "total_pages": total_pages,
+                "current_page": page,
+                "page_size": page_size,
+                "showing_rows": len(page_data)
+            },
+            "data": json.loads(page_data.to_json(orient="records"))
+        }
+        
+        return json.dumps(response, indent=2)
     except Exception as e:
         ctx.info(f"Error retrieving table contents: {str(e)}")
         return f"Error retrieving table contents: {str(e)}"
 
 
 @mcp.tool()
-def get_statistics(ctx: Context) -> str:
+def get_statistics(table_name: str = None, column_name: str = None, ctx: Context) -> str:
     """
-    Get statistics about the model.
+    Get statistics about the model with optional filtering.
+    
+    Args:
+        table_name: Optional filter for statistics from a specific table
+        column_name: Optional filter for statistics of a specific column
     
     Returns:
         Statistics about column cardinality and byte sizes
@@ -373,7 +509,27 @@ def get_statistics(ctx: Context) -> str:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
     
     try:
+        # Get all statistics
         statistics = current_model.statistics
+        
+        # Apply table filter if specified
+        if table_name:
+            statistics = statistics[statistics['TableName'] == table_name]
+            
+        # Apply column filter if specified
+        if column_name:
+            statistics = statistics[statistics['ColumnName'] == column_name]
+            
+        # Return message if no statistics match the filters
+        if len(statistics) == 0:
+            filters = []
+            if table_name:
+                filters.append(f"table '{table_name}'")
+            if column_name:
+                filters.append(f"column '{column_name}'")
+            filter_text = " and ".join(filters)
+            return f"No statistics found with {filter_text}."
+        
         return statistics.to_json(orient="records", indent=2)
     except Exception as e:
         ctx.info(f"Error retrieving statistics: {str(e)}")

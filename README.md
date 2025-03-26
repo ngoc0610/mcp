@@ -62,9 +62,20 @@ python src/pbixray_server.py
 # With disabled tools for security
 python src/pbixray_server.py --disallow get_m_parameters get_power_query
 
+# Customize pagination and row limits 
+python src/pbixray_server.py --max-rows 500 --page-size 50
+
 # OR use the MCP CLI
 mcp run src/pbixray_server.py
 ```
+
+### Command Line Options
+
+The server supports several command line options:
+
+* `--disallow [tool_names]`: Disable specific tools for security reasons
+* `--max-rows N`: Set maximum number of rows returned (default: 100)
+* `--page-size N`: Set default page size for paginated results (default: 20)
 
 ### Testing with Sample Files
 
@@ -95,13 +106,61 @@ The server provides the following tools:
 5. **get_m_parameters** - Display M Parameters values
 6. **get_model_size** - Get the model size in bytes
 7. **get_dax_tables** - View DAX calculated tables
-8. **get_dax_measures** - Access DAX measures
-9. **get_dax_columns** - Access calculated column DAX expressions
-10. **get_schema** - Get model schema details
-11. **get_relationships** - View table relationships
-12. **get_table_contents** - Retrieve contents of a specified table
-13. **get_statistics** - Get model statistics
+8. **get_dax_measures** - Access DAX measures with filtering by table or measure name
+9. **get_dax_columns** - Access calculated column DAX expressions with filtering by table or column name
+10. **get_schema** - Get model schema details with filtering by table or column name
+11. **get_relationships** - View table relationships with filtering by source or target table
+12. **get_table_contents** - Retrieve contents of a specified table with pagination
+13. **get_statistics** - Get model statistics with filtering by table or column name
 14. **get_model_summary** - Get a comprehensive model summary
+
+### Query Options
+
+Many tools support additional parameters for filtering and pagination:
+
+#### Filtering by Name
+
+Tools like `get_dax_measures`, `get_dax_columns`, `get_schema` and others support filtering by specific names:
+
+```
+# Get measures from a specific table
+get_dax_measures(table_name="Sales")
+
+# Get a specific measure
+get_dax_measures(table_name="Sales", measure_name="Total Sales")
+
+# Get schema for a specific table
+get_schema(table_name="Products")
+```
+
+#### Pagination for Large Tables
+
+The `get_table_contents` tool supports pagination to handle large tables efficiently:
+
+```
+# Get first page of Customer table (default 20 rows per page)
+get_table_contents(table_name="Customer")
+
+# Get second page with 50 rows per page
+get_table_contents(table_name="Customer", page=2, page_size=50)
+```
+
+The response includes pagination metadata to help navigate large datasets:
+
+```json
+{
+  "pagination": {
+    "total_rows": 1500,
+    "total_pages": 30,
+    "current_page": 2,
+    "page_size": 50,
+    "showing_rows": 50
+  },
+  "data": [
+    // Table rows here
+  ]
+}
+```
 
 ### Tool Security
 
