@@ -419,10 +419,11 @@ def main():
     This function is the entry point for the package and
     can be called from command line after installation.
     """
-    print("Starting PBIXRay MCP Server...")
+    # Use stderr for logging messages to avoid interfering with JSON-RPC over stdout
+    print("Starting PBIXRay MCP Server...", file=sys.stderr)
     
     if disallowed_tools:
-        print(f"Security: Disallowed tools: {', '.join(disallowed_tools)}")
+        print(f"Security: Disallowed tools: {', '.join(disallowed_tools)}", file=sys.stderr)
     
     mcp.run(transport="stdio")
 
