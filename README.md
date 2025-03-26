@@ -147,7 +147,7 @@ When configuring Claude Desktop to use the server from WSL, use a launcher scrip
    #!/bin/bash
    cd "$(dirname "$0")"
    source venv/bin/activate
-   python src/pbixray_server.py
+   python src/pbixray_server.py "$@"
    ```
 
 2. Make it executable:
@@ -166,6 +166,19 @@ When configuring Claude Desktop to use the server from WSL, use a launcher scrip
      ]
    }
    ```
+
+4. To disable specific tools for security reasons, add the `--disallow` flag:
+   ```json
+   "pbixray": {
+     "command": "wsl.exe",
+     "args": [
+       "bash",
+       "-c",
+       "/home/username/dev/pbixray-mcp/run_server.sh --disallow get_m_parameters get_power_query"
+     ]
+   }
+   ```
+   This example disables the `get_m_parameters` and `get_power_query` tools.
 
 ## Development
 
