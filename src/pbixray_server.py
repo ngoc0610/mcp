@@ -156,11 +156,24 @@ def get_metadata(ctx: Context) -> str:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
     
     try:
-        metadata = current_model.metadata
-        return json.dumps(metadata, indent=2, cls=NumpyEncoder)
+        # Based on our debugging, we know metadata is a DataFrame with Name/Value columns
+        metadata_df = current_model.metadata
+        
+        # Convert to records format which is JSON serializable
+        return metadata_df.to_json(orient="records")
+        
     except Exception as e:
-        ctx.info(f"Error retrieving metadata: {str(e)}")
-        return f"Error retrieving metadata: {str(e)}"
+        # If to_json fails, try a more reliable approach
+        try:
+            metadata_df = current_model.metadata
+            # Create a dictionary of name-value pairs
+            metadata_dict = {}
+            for i, row in metadata_df.iterrows():
+                metadata_dict[row['Name']] = row['Value']
+            return json.dumps(metadata_dict, indent=2)
+        except Exception as inner_e:
+            ctx.info(f"Error retrieving metadata: {str(e)}, Inner error: {str(inner_e)}")
+            return f"Error retrieving metadata: {str(e)}"
 
 
 @mcp.tool()
@@ -580,6 +593,36 @@ def get_model_summary(ctx: Context) -> str:
         ctx.info(f"Error creating model summary: {str(e)}")
         return f"Error creating model summary: {str(e)}"
 
+
+@mcp.tool()
+def get_metadata_fixed(ctx: Context) -> str:
+    """
+    Get metadata about the Power BI configuration using a direct approach.
+    
+    Returns:
+        The metadata as a formatted string
+    """
+    global current_model
+    
+    if current_model is None:
+        return "Error: No Power BI file loaded. Please use load_pbix_file first."
+    
+    try:
+        # Get the metadata DataFrame
+        metadata_df = current_model.metadata
+        
+        # Create a dictionary from the name-value pairs
+        result = {}
+        for _, row in metadata_df.iterrows():
+            name = row['Name']
+            value = row['Value']
+            result[name] = value
+            
+        # Return as formatted JSON
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        ctx.info(f"Error in get_metadata_fixed: {str(e)}")
+        return f"Error in get_metadata_fixed: {str(e)}"
 
 def main():
     """
