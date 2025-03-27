@@ -22,8 +22,8 @@ from pbixray import PBIXRay
 def parse_args():
     parser = argparse.ArgumentParser(description='PBIXRay MCP Server')
     parser.add_argument('--disallow', nargs='+', help='Specify tools to disable', default=[])
-    parser.add_argument('--max-rows', type=int, default=100, help='Maximum rows to return for table data (default: 100)')
-    parser.add_argument('--page-size', type=int, default=20, help='Default page size for paginated results (default: 20)')
+    parser.add_argument('--max-rows', type=int, default=10, help='Maximum rows to return for table data (default: 10)')
+    parser.add_argument('--page-size', type=int, default=10, help='Default page size for paginated results (default: 10)')
     return parser.parse_args()
 
 # Get command line arguments
@@ -448,6 +448,9 @@ def get_table_contents(ctx: Context, table_name: str, page: int = 1, page_size: 
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
     
     try:
+        import time
+        start_time = time.time()
+        
         # Use command-line page size if not specified
         if page_size is None:
             page_size = PAGE_SIZE
@@ -457,10 +460,16 @@ def get_table_contents(ctx: Context, table_name: str, page: int = 1, page_size: 
             return "Error: Page number must be 1 or greater."
         if page_size < 1:
             return "Error: Page size must be 1 or greater."
+        
+        # Log for large tables
+        ctx.info(f"Retrieving page {page} from table '{table_name}'...")
             
         table_contents = current_model.get_table(table_name)
         total_rows = len(table_contents)
         total_pages = (total_rows + page_size - 1) // page_size
+        
+        if total_rows > 10000:
+            ctx.info(f"Large table detected: '{table_name}' has {total_rows} rows")
         
         # Calculate indices for requested page
         start_idx = (page - 1) * page_size
@@ -484,6 +493,10 @@ def get_table_contents(ctx: Context, table_name: str, page: int = 1, page_size: 
             },
             "data": json.loads(page_data.to_json(orient="records"))
         }
+        
+        elapsed_time = time.time() - start_time
+        if elapsed_time > 1.0:  # Only log if it took more than a second
+            ctx.info(f"Retrieved data from '{table_name}' ({total_rows} rows) in {elapsed_time:.2f} seconds")
         
         return json.dumps(response, indent=2)
     except Exception as e:
