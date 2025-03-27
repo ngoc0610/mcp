@@ -29,7 +29,14 @@ class MockPBIXRay:
     def __init__(self, file_path):
         self.file_path = file_path
         self.tables = ["Table1", "Table2"]
-        self.metadata = {"version": "1.0"}
+        
+        # Create metadata as a DataFrame with Name and Value columns (matching real structure)
+        import pandas as pd
+        self.metadata = pd.DataFrame({
+            "Name": ["version", "creator", "timestamp"],
+            "Value": ["1.0", "Test User", "2023-01-01"]
+        })
+        
         self.size = 1024
         
     def get_table(self, table_name):
