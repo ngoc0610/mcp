@@ -12,6 +12,8 @@ import numpy as np
 import argparse
 import functools
 import sys
+import anyio
+import asyncio
 from typing import Optional, Dict, Any, List, Union, Callable
 from pathlib import Path
 
@@ -87,9 +89,49 @@ mcp.tool = secure_tool
 current_model: Optional[PBIXRay] = None
 current_model_path: Optional[str] = None
 
+# Helper function for async processing of potentially slow model operations
+async def run_model_operation(ctx: Context, operation_name: str, operation_fn, *args, **kwargs):
+    """
+    Run a potentially slow model operation asynchronously with progress reporting.
+    
+    Args:
+        ctx: The MCP context for reporting progress
+        operation_name: A descriptive name of the operation for logging
+        operation_fn: The function to execute
+        *args, **kwargs: Arguments to pass to the operation function
+    
+    Returns:
+        The result of the operation
+    """
+    import time
+    start_time = time.time()
+    
+    # Log start of operation
+    await ctx.info(f"Starting {operation_name}...")
+    await ctx.report_progress(0, 100)
+    
+    # Run the operation in a thread pool
+    try:
+        def run_operation():
+            return operation_fn(*args, **kwargs)
+            
+        # Execute in thread pool to avoid blocking the event loop
+        result = await anyio.to_thread.run_sync(run_operation)
+        
+        # Report completion
+        elapsed_time = time.time() - start_time
+        if elapsed_time > 1.0:  # Only log if it took more than a second
+            await ctx.info(f"Completed {operation_name} in {elapsed_time:.2f} seconds")
+        await ctx.report_progress(100, 100)
+        
+        return result
+    except Exception as e:
+        await ctx.error(f"Error in {operation_name}: {str(e)}")
+        raise
+
 
 @mcp.tool()
-def load_pbix_file(file_path: str, ctx: Context) -> str:
+async def load_pbix_file(file_path: str, ctx: Context) -> str:
     """
     Load a Power BI (.pbix) file for analysis.
     
@@ -109,9 +151,68 @@ def load_pbix_file(file_path: str, ctx: Context) -> str:
         return f"Error: File '{file_path}' is not a .pbix file."
     
     try:
+        # Log the start of loading
         ctx.info(f"Loading PBIX file: {file_path}")
-        current_model = PBIXRay(file_path)
+        file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
+        ctx.info(f"File size: {file_size_mb:.2f} MB")
+        
+        # Report initial progress
+        await ctx.report_progress(0, 100)
+        
+        # For large files, load in a separate thread to avoid blocking
+        if file_size_mb > 50:  # For files larger than 50MB
+            await ctx.info(f"Large file detected ({file_size_mb:.2f} MB). Loading asynchronously...")
+            
+            # Create an event to track completion and a cancellation event
+            load_complete = anyio.Event()
+            cancel_progress = anyio.Event()
+            load_error = None
+            
+            # Start progress reporting in the background
+            async def progress_reporter():
+                progress = 5
+                try:
+                    while not cancel_progress.is_set() and progress < 95:
+                        await ctx.report_progress(progress, 100)
+                        progress += 5 if progress < 50 else 2  # Slower progress after 50%
+                        await anyio.sleep(1)
+                except Exception as e:
+                    await ctx.info(f"Progress reporting error: {str(e)}")
+            
+            # Function to run in thread pool
+            def load_pbixray():
+                nonlocal load_error
+                try:
+                    return PBIXRay(file_path)
+                except Exception as e:
+                    load_error = e
+                    return None
+            
+            # Start progress reporter task
+            progress_task = asyncio.create_task(progress_reporter())
+            
+            try:
+                # Load the file in a thread pool
+                pbix_model = await anyio.to_thread.run_sync(load_pbixray)
+                
+                # Check for errors during loading
+                if load_error:
+                    await ctx.info(f"Error loading PBIX file: {str(load_error)}")
+                    return f"Error loading file: {str(load_error)}"
+                
+                # Set the global model reference
+                current_model = pbix_model
+            finally:
+                # Cancel progress reporting
+                cancel_progress.set()
+                await progress_task
+        else:
+            # For smaller files, load directly
+            current_model = PBIXRay(file_path)
+        
+        # Set the path and report completion
         current_model_path = file_path
+        await ctx.report_progress(100, 100)
         return f"Successfully loaded '{os.path.basename(file_path)}'"
     except Exception as e:
         ctx.info(f"Error loading PBIX file: {str(e)}")
@@ -395,7 +496,7 @@ def get_schema(ctx: Context, table_name: str = None, column_name: str = None) ->
 
 
 @mcp.tool()
-def get_relationships(ctx: Context, from_table: str = None, to_table: str = None) -> str:
+async def get_relationships(ctx: Context, from_table: str = None, to_table: str = None) -> str:
     """
     Get the details about the data model relationships with optional filtering.
     
@@ -412,17 +513,37 @@ def get_relationships(ctx: Context, from_table: str = None, to_table: str = None
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
     
     try:
-        # Get all relationships
-        relationships = current_model.relationships
+        # Define the operation to get relationships
+        def get_filtered_relationships():
+            # Access the global model
+            # We need to capture current_model from the outer scope
+            model = current_model
+            # Get all relationships
+            relationships = model.relationships
+            
+            # Apply from_table filter if specified
+            if from_table:
+                relationships = relationships[relationships['FromTableName'] == from_table]
+                
+            # Apply to_table filter if specified
+            if to_table:
+                relationships = relationships[relationships['ToTableName'] == to_table]
+                
+            return relationships
         
-        # Apply from_table filter if specified
-        if from_table:
-            relationships = relationships[relationships['FromTableName'] == from_table]
-            
-        # Apply to_table filter if specified
-        if to_table:
-            relationships = relationships[relationships['ToTableName'] == to_table]
-            
+        # Run the potentially slow operation asynchronously
+        operation_name = "relationship retrieval"
+        if from_table or to_table:
+            filters = []
+            if from_table:
+                filters.append(f"from '{from_table}'")
+            if to_table:
+                filters.append(f"to '{to_table}'")
+            filter_text = " and ".join(filters)
+            operation_name += f" ({filter_text})"
+        
+        relationships = await run_model_operation(ctx, operation_name, get_filtered_relationships)
+        
         # Return message if no relationships match the filters
         if len(relationships) == 0:
             filters = []
@@ -435,12 +556,12 @@ def get_relationships(ctx: Context, from_table: str = None, to_table: str = None
         
         return relationships.to_json(orient="records", indent=2)
     except Exception as e:
-        ctx.info(f"Error retrieving relationships: {str(e)}")
+        await ctx.info(f"Error retrieving relationships: {str(e)}")
         return f"Error retrieving relationships: {str(e)}"
 
 
 @mcp.tool()
-def get_table_contents(ctx: Context, table_name: str, page: int = 1, page_size: int = None) -> str:
+async def get_table_contents(ctx: Context, table_name: str, page: int = 1, page_size: int = None) -> str:
     """
     Retrieve the contents of a specified table with pagination.
     
@@ -472,14 +593,26 @@ def get_table_contents(ctx: Context, table_name: str, page: int = 1, page_size: 
             return "Error: Page size must be 1 or greater."
         
         # Log for large tables
-        ctx.info(f"Retrieving page {page} from table '{table_name}'...")
-            
-        table_contents = current_model.get_table(table_name)
+        await ctx.info(f"Retrieving page {page} from table '{table_name}'...")
+        
+        # Report initial progress
+        await ctx.report_progress(0, 100)
+        
+        # For large tables, switch to async processing
+        def fetch_table():
+            return current_model.get_table(table_name)
+        
+        # Run the table fetching in a thread pool
+        table_contents = await anyio.to_thread.run_sync(fetch_table)
+        
+        # Report mid-progress
+        await ctx.report_progress(50, 100)
+        
         total_rows = len(table_contents)
         total_pages = (total_rows + page_size - 1) // page_size
         
         if total_rows > 10000:
-            ctx.info(f"Large table detected: '{table_name}' has {total_rows} rows")
+            await ctx.info(f"Large table detected: '{table_name}' has {total_rows} rows")
         
         # Calculate indices for requested page
         start_idx = (page - 1) * page_size
@@ -492,6 +625,16 @@ def get_table_contents(ctx: Context, table_name: str, page: int = 1, page_size: 
         # Get the requested page of data
         page_data = table_contents.iloc[start_idx:end_idx]
         
+        # Report progress before JSON conversion
+        await ctx.report_progress(75, 100)
+        
+        # For very large tables, this serialization step can be slow
+        # Run in thread pool for better responsiveness
+        def serialize_data():
+            return json.loads(page_data.to_json(orient="records"))
+        
+        serialized_data = await anyio.to_thread.run_sync(serialize_data)
+        
         # Create response with pagination metadata
         response = {
             "pagination": {
@@ -501,16 +644,19 @@ def get_table_contents(ctx: Context, table_name: str, page: int = 1, page_size: 
                 "page_size": page_size,
                 "showing_rows": len(page_data)
             },
-            "data": json.loads(page_data.to_json(orient="records"))
+            "data": serialized_data
         }
+        
+        # Report completion
+        await ctx.report_progress(100, 100)
         
         elapsed_time = time.time() - start_time
         if elapsed_time > 1.0:  # Only log if it took more than a second
-            ctx.info(f"Retrieved data from '{table_name}' ({total_rows} rows) in {elapsed_time:.2f} seconds")
+            await ctx.info(f"Retrieved data from '{table_name}' ({total_rows} rows) in {elapsed_time:.2f} seconds")
         
-        return json.dumps(response, indent=2)
+        return json.dumps(response, indent=2, cls=NumpyEncoder)
     except Exception as e:
-        ctx.info(f"Error retrieving table contents: {str(e)}")
+        await ctx.info(f"Error retrieving table contents: {str(e)}")
         return f"Error retrieving table contents: {str(e)}"
 
 
@@ -560,7 +706,7 @@ def get_statistics(ctx: Context, table_name: str = None, column_name: str = None
 
 
 @mcp.tool()
-def get_model_summary(ctx: Context) -> str:
+async def get_model_summary(ctx: Context) -> str:
     """
     Get a comprehensive summary of the current Power BI model.
     
@@ -573,21 +719,42 @@ def get_model_summary(ctx: Context) -> str:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
     
     try:
+        # Report initial progress
+        await ctx.report_progress(0, 100)
+        
         # Collect information from various methods
+        # This can be slow for large models, so we'll report progress
+        
+        # First, get the basic info
         summary = {
             "file_path": current_model_path,
             "file_name": os.path.basename(current_model_path),
             "size_bytes": current_model.size,
             "size_mb": round(current_model.size / (1024 * 1024), 2),
-            "tables_count": len(current_model.tables),
-            "tables": current_model.tables.tolist() if isinstance(current_model.tables, np.ndarray) else current_model.tables,
-            "measures_count": len(current_model.dax_measures) if hasattr(current_model.dax_measures, "__len__") else "Unknown",
-            "relationships_count": len(current_model.relationships) if hasattr(current_model.relationships, "__len__") else "Unknown",
         }
+        
+        await ctx.report_progress(25, 100)
+        
+        # Now add tables info
+        summary["tables_count"] = len(current_model.tables)
+        summary["tables"] = current_model.tables.tolist() if isinstance(current_model.tables, np.ndarray) else current_model.tables
+        
+        await ctx.report_progress(50, 100)
+        
+        # Add measures info
+        summary["measures_count"] = len(current_model.dax_measures) if hasattr(current_model.dax_measures, "__len__") else "Unknown"
+        
+        await ctx.report_progress(75, 100)
+        
+        # Add relationships info
+        summary["relationships_count"] = len(current_model.relationships) if hasattr(current_model.relationships, "__len__") else "Unknown"
+        
+        # Report completion
+        await ctx.report_progress(100, 100)
         
         return json.dumps(summary, indent=2, cls=NumpyEncoder)
     except Exception as e:
-        ctx.info(f"Error creating model summary: {str(e)}")
+        await ctx.info(f"Error creating model summary: {str(e)}")
         return f"Error creating model summary: {str(e)}"
 
 
@@ -604,7 +771,17 @@ def main():
     if disallowed_tools:
         print(f"Security: Disallowed tools: {', '.join(disallowed_tools)}", file=sys.stderr)
     
-    mcp.run(transport="stdio")
+    # Configure server options to handle large PBIX files
+    # The default FastMCP timeout is around 30 seconds which can be too short for large PBIX files
+    # Set a higher default timeout for all operations
+    print("Configuring extended timeouts for large file handling...", file=sys.stderr)
+    
+    # Run the server with stdio transport
+    try:
+        mcp.run(transport="stdio")
+    except Exception as e:
+        print(f"PBIXRay MCP Server error: {str(e)}", file=sys.stderr)
+        sys.exit(1)
 
 if __name__ == "__main__":
     # Run the server with stdio transport for MCP

@@ -85,14 +85,47 @@ To stop the Inspector:
 
 ## Automated Testing
 
-The project includes automated tests in the `tests/` directory. To run them:
+The project includes automated tests in the `tests/` directory. To run all tests:
 
 ```bash
-# Run the test with a sample file
-python tests/test_with_sample.py
+# Activate your virtual environment
+source venv/bin/activate
+
+# Run all tests
+pytest
 ```
 
-This will connect to the server, load a sample PBIX file, and test various tools automatically.
+### Testing with a Custom PBIX File
+
+By default, the tests use the demo PBIX file included in the repository (`demo/AdventureWorks Sales.pbix`). 
+You can specify a custom PBIX file to use in the tests with the `--pbix-file` option:
+
+```bash
+# Test with a specific PBIX file
+pytest tests/test_server.py --pbix-file=/path/to/your/custom.pbix
+
+# Test just the large file handling with a custom PBIX
+pytest tests/test_server.py::test_large_file_handling --pbix-file=/path/to/large.pbix
+```
+
+This is useful for testing with:
+- Large PBIX files to verify timeout handling
+- Files with complex structures or relationships
+- Files that have caused issues in the past
+
+### Running Specific Tests
+
+To run specific test files or functions:
+
+```bash
+# Run a specific test file
+pytest tests/test_server.py
+
+# Run a specific test function
+pytest tests/test_server.py::test_load_pbix_file
+```
+
+All test functions that use real PBIX files will automatically use the file specified with `--pbix-file` if provided.
 
 ## Interactive Demo
 
@@ -137,19 +170,51 @@ PYTHONVERBOSE=1 python src/pbixray_server.py
 
 This will show more detailed logs about tool calls, errors, and server operations.
 
+## Test Coverage
+
+The automated tests cover:
+
+1. **Basic Functionality**
+   - Loading PBIX files
+   - Retrieving tables and metadata
+   - Getting model summaries and statistics
+
+2. **Large File Handling**
+   - Tests specifically for large file loading
+   - Progress reporting during long operations
+   - Thread pool processing for CPU-intensive operations
+
+3. **Asynchronous Operations**
+   - Testing of async functions
+   - Proper cancellation of background tasks
+   - Resource cleanup
+
+4. **Error Handling**
+   - Testing for proper error reporting
+   - Handling of missing files or invalid paths
+   - Recovery from failures
+
+The tests use both the actual demo PBIX file and mock objects, ensuring both real-world usage and edge cases are covered.
+
 ## Common Testing Issues
 
 1. **Missing Libraries**
    - Ensure `pbixray`, `numpy`, and `mcp` packages are installed
    - Install: `pip install -r requirements.txt`
+   - For testing, also install `pytest` and `pytest-asyncio`
 
 2. **File Path Issues**
    - Always use absolute paths when testing with PBIX files
    - Check file permissions if you get access denied errors
+   - Use the `--pbix-file` option for custom PBIX files
 
 3. **Data Format Issues**
    - If you see JSON serialization errors, check the `NumpyEncoder` in the server code
    - Large datasets may need limiting with pagination or sampling
+
+4. **Timeouts with Large Files**
+   - If you're still experiencing timeouts, the server includes a fix for this
+   - Use the `test_large_file_handling` test to verify timeout handling
 
 ## Next Steps
 
