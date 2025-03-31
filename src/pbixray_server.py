@@ -515,8 +515,11 @@ async def get_relationships(ctx: Context, from_table: str = None, to_table: str 
     try:
         # Define the operation to get relationships
         def get_filtered_relationships():
+            # Access the global model
+            # We need to capture current_model from the outer scope
+            model = current_model
             # Get all relationships
-            relationships = current_model.relationships
+            relationships = model.relationships
             
             # Apply from_table filter if specified
             if from_table:
