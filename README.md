@@ -27,19 +27,6 @@
    - Windows: `C:\Users\name\file.pbix`
    - WSL: `/mnt/c/Users/name/file.pbix`
 
-## Configure Claude Web
-
-1. Clone the repository and start server:
-   ```bash
-   git clone https://github.com/Hugoberry/pbixray-mcp.git
-   cd pbixray-mcp
-   python src/pbixray_server.py
-   ```
-
-2. In Claude settings → Integrations → Add tool:
-   - Name: `PBIXRay`
-   - URL: `http://localhost:8000`
-
 ## Example Queries
 - "Load the Power BI file at /path/to/sales.pbix"
 - "List all tables in my model"
