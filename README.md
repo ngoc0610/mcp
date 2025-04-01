@@ -17,6 +17,8 @@
          "-c",
          "/path/to/pbixray-mcp/run_server.sh"
        ]
+     }
+    ...
    
    ```
    Replace `/path/to/pbixray-mcp` with your actual WSL path
