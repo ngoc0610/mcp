@@ -9,7 +9,7 @@
 
 2. In Claude Desktop settings, add this configuration:
    ```json
-   "tools": {
+   ...
      "pbixray": {
        "command": "wsl.exe",
        "args": [
@@ -17,8 +17,7 @@
          "-c",
          "/path/to/pbixray-mcp/run_server.sh"
        ]
-     }
-   }
+   
    ```
    Replace `/path/to/pbixray-mcp` with your actual WSL path
 
