@@ -227,7 +227,6 @@ def get_tables(ctx: Context) -> str:
     Returns:
         A list of tables in the model
     """
-    global current_model
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
@@ -251,7 +250,6 @@ def get_metadata(ctx: Context) -> str:
     Returns:
         The metadata as a formatted string
     """
-    global current_model
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
@@ -282,7 +280,6 @@ def get_power_query(ctx: Context) -> str:
     Returns:
         A list of all Power Query expressions with their table names
     """
-    global current_model
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
@@ -305,7 +302,6 @@ def get_m_parameters(ctx: Context) -> str:
     Returns:
         A list of parameter info with names, descriptions, and expressions
     """
-    global current_model
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
@@ -326,7 +322,6 @@ def get_model_size(ctx: Context) -> str:
     Returns:
         The size of the model in bytes
     """
-    global current_model
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
@@ -347,7 +342,6 @@ def get_dax_tables(ctx: Context) -> str:
     Returns:
         A list of DAX calculated tables with names and expressions
     """
-    global current_model
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
@@ -372,7 +366,6 @@ def get_dax_measures(ctx: Context, table_name: str = None, measure_name: str = N
     Returns:
         A list of DAX measures with names, expressions, and other metadata
     """
-    global current_model
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
@@ -417,7 +410,6 @@ def get_dax_columns(ctx: Context, table_name: str = None, column_name: str = Non
     Returns:
         A list of calculated columns with names and expressions
     """
-    global current_model
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
@@ -462,7 +454,6 @@ def get_schema(ctx: Context, table_name: str = None, column_name: str = None) ->
     Returns:
         A description of the schema with table names, column names, and data types
     """
-    global current_model
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
@@ -507,7 +498,6 @@ async def get_relationships(ctx: Context, from_table: str = None, to_table: str 
     Returns:
         A description of the relationships between tables in the model
     """
-    global current_model
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
@@ -573,7 +563,6 @@ async def get_table_contents(ctx: Context, table_name: str, page: int = 1, page_
     Returns:
         The table contents in JSON format with pagination metadata
     """
-    global current_model
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
@@ -672,7 +661,6 @@ def get_statistics(ctx: Context, table_name: str = None, column_name: str = None
     Returns:
         Statistics about column cardinality and byte sizes
     """
-    global current_model
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
@@ -713,7 +701,6 @@ async def get_model_summary(ctx: Context) -> str:
     Returns:
         A summary of the model with key metrics and information
     """
-    global current_model, current_model_path
     
     if current_model is None:
         return "Error: No Power BI file loaded. Please use load_pbix_file first."
