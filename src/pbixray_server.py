@@ -22,11 +22,12 @@ from pbixray import PBIXRay
 
 # Parse command line arguments
 def parse_args():
-    parser = argparse.ArgumentParser(description='PBIXRay MCP Server')
-    parser.add_argument('--disallow', nargs='+', help='Specify tools to disable', default=[])
-    parser.add_argument('--max-rows', type=int, default=10, help='Maximum rows to return for table data (default: 10)')
-    parser.add_argument('--page-size', type=int, default=10, help='Default page size for paginated results (default: 10)')
+    parser = argparse.ArgumentParser(description="PBIXRay MCP Server")
+    parser.add_argument("--disallow", nargs="+", help="Specify tools to disable", default=[])
+    parser.add_argument("--max-rows", type=int, default=10, help="Maximum rows to return for table data (default: 10)")
+    parser.add_argument("--page-size", type=int, default=10, help="Default page size for paginated results (default: 10)")
     return parser.parse_args()
+
 
 # Get command line arguments
 
@@ -49,6 +50,7 @@ class NumpyEncoder(json.JSONEncoder):
         if isinstance(obj, np.bool_):
             return bool(obj)
         return super().default(obj)
+
 
 # Initialize the MCP server
 
@@ -88,6 +90,7 @@ def secure_tool(*args, **kwargs):
 
     return new_decorator
 
+
 # Replace the original tool decorator with our secure version
 
 
@@ -113,6 +116,7 @@ async def run_model_operation(ctx: Context, operation_name: str, operation_fn, *
         The result of the operation
     """
     import time
+
     start_time = time.time()
 
     # Log start of operation
@@ -121,6 +125,7 @@ async def run_model_operation(ctx: Context, operation_name: str, operation_fn, *
 
     # Run the operation in a thread pool
     try:
+
         def run_operation():
             return operation_fn(*args, **kwargs)
 
@@ -156,7 +161,7 @@ async def load_pbix_file(file_path: str, ctx: Context) -> str:
     if not os.path.exists(file_path):
         return f"Error: File '{file_path}' not found."
 
-    if not file_path.lower().endswith('.pbix'):
+    if not file_path.lower().endswith(".pbix"):
         return f"Error: File '{file_path}' is not a .pbix file."
 
     try:
@@ -270,8 +275,8 @@ def get_metadata(ctx: Context) -> str:
         # Create a dictionary from the name-value pairs
         result = {}
         for _, row in metadata_df.iterrows():
-            name = row['Name']
-            value = row['Value']
+            name = row["Name"]
+            value = row["Value"]
             result[name] = value
 
         # Return as formatted JSON
@@ -385,11 +390,11 @@ def get_dax_measures(ctx: Context, table_name: str = None, measure_name: str = N
 
         # Apply table filter if specified
         if table_name:
-            dax_measures = dax_measures[dax_measures['TableName'] == table_name]
+            dax_measures = dax_measures[dax_measures["TableName"] == table_name]
 
         # Apply measure name filter if specified
         if measure_name:
-            dax_measures = dax_measures[dax_measures['Name'] == measure_name]
+            dax_measures = dax_measures[dax_measures["Name"] == measure_name]
 
         # Return message if no measures match the filters
         if len(dax_measures) == 0:
@@ -429,11 +434,11 @@ def get_dax_columns(ctx: Context, table_name: str = None, column_name: str = Non
 
         # Apply table filter if specified
         if table_name:
-            dax_columns = dax_columns[dax_columns['TableName'] == table_name]
+            dax_columns = dax_columns[dax_columns["TableName"] == table_name]
 
         # Apply column name filter if specified
         if column_name:
-            dax_columns = dax_columns[dax_columns['ColumnName'] == column_name]
+            dax_columns = dax_columns[dax_columns["ColumnName"] == column_name]
 
         # Return message if no columns match the filters
         if len(dax_columns) == 0:
@@ -473,11 +478,11 @@ def get_schema(ctx: Context, table_name: str = None, column_name: str = None) ->
 
         # Apply table filter if specified
         if table_name:
-            schema = schema[schema['TableName'] == table_name]
+            schema = schema[schema["TableName"] == table_name]
 
         # Apply column filter if specified
         if column_name:
-            schema = schema[schema['ColumnName'] == column_name]
+            schema = schema[schema["ColumnName"] == column_name]
 
         # Return message if no columns match the filters
         if len(schema) == 0:
@@ -522,11 +527,11 @@ async def get_relationships(ctx: Context, from_table: str = None, to_table: str 
 
             # Apply from_table filter if specified
             if from_table:
-                relationships = relationships[relationships['FromTableName'] == from_table]
+                relationships = relationships[relationships["FromTableName"] == from_table]
 
             # Apply to_table filter if specified
             if to_table:
-                relationships = relationships[relationships['ToTableName'] == to_table]
+                relationships = relationships[relationships["ToTableName"] == to_table]
 
             return relationships
 
@@ -578,6 +583,7 @@ async def get_table_contents(ctx: Context, table_name: str, page: int = 1, page_
 
     try:
         import time
+
         start_time = time.time()
 
         # Use command-line page size if not specified
@@ -640,9 +646,9 @@ async def get_table_contents(ctx: Context, table_name: str, page: int = 1, page_
                 "total_pages": total_pages,
                 "current_page": page,
                 "page_size": page_size,
-                "showing_rows": len(page_data)
+                "showing_rows": len(page_data),
             },
-            "data": serialized_data
+            "data": serialized_data,
         }
 
         # Report completion
@@ -680,11 +686,11 @@ def get_statistics(ctx: Context, table_name: str = None, column_name: str = None
 
         # Apply table filter if specified
         if table_name:
-            statistics = statistics[statistics['TableName'] == table_name]
+            statistics = statistics[statistics["TableName"] == table_name]
 
         # Apply column filter if specified
         if column_name:
-            statistics = statistics[statistics['ColumnName'] == column_name]
+            statistics = statistics[statistics["ColumnName"] == column_name]
 
         # Return message if no statistics match the filters
         if len(statistics) == 0:
@@ -733,17 +739,23 @@ async def get_model_summary(ctx: Context) -> str:
 
         # Now add tables info
         summary["tables_count"] = len(current_model.tables)
-        summary["tables"] = current_model.tables.tolist() if isinstance(current_model.tables, np.ndarray) else current_model.tables
+        summary["tables"] = (
+            current_model.tables.tolist() if isinstance(current_model.tables, np.ndarray) else current_model.tables
+        )
 
         await ctx.report_progress(50, 100)
 
         # Add measures info
-        summary["measures_count"] = len(current_model.dax_measures) if hasattr(current_model.dax_measures, "__len__") else "Unknown"
+        summary["measures_count"] = (
+            len(current_model.dax_measures) if hasattr(current_model.dax_measures, "__len__") else "Unknown"
+        )
 
         await ctx.report_progress(75, 100)
 
         # Add relationships info
-        summary["relationships_count"] = len(current_model.relationships) if hasattr(current_model.relationships, "__len__") else "Unknown"
+        summary["relationships_count"] = (
+            len(current_model.relationships) if hasattr(current_model.relationships, "__len__") else "Unknown"
+        )
 
         # Report completion
         await ctx.report_progress(100, 100)
@@ -778,7 +790,6 @@ def main():
     except Exception as e:
         print(f"PBIXRay MCP Server error: {str(e)}", file=sys.stderr)
         sys.exit(1)
-
 
 
 if __name__ == "__main__":

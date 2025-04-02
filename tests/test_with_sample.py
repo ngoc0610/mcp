@@ -11,11 +11,12 @@ from mcp.client.stdio import stdio_client
 from mcp import StdioServerParameters
 
 
-
 async def main():
     """Test the PBIXRay MCP server with a sample file"""
     server_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src", "pbixray_server.py")
-    sample_file_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "demo", "AdventureWorks Sales.pbix")
+    sample_file_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "demo", "AdventureWorks Sales.pbix"
+    )
 
     # Make sure the sample file exists
     if not os.path.exists(sample_file_path):
@@ -23,11 +24,7 @@ async def main():
         return
 
     # Start the server process
-    server_params = StdioServerParameters(
-        command="python",
-        args=[server_path],
-        env=None
-    )
+    server_params = StdioServerParameters(command="python", args=[server_path], env=None)
 
     print(f"Connecting to PBIXRay server and testing with file: {os.path.basename(sample_file_path)}")
 
@@ -64,7 +61,6 @@ async def main():
             print("\nAll tests completed successfully!")
 
 
-
 def print_result(result):
     """Print tool call results in a readable format"""
     for content in result.content:
@@ -76,7 +72,6 @@ def print_result(result):
             except json.JSONDecodeError:
                 # Regular text output
                 print(content.text)
-
 
 
 if __name__ == "__main__":

@@ -12,14 +12,11 @@ from mcp.client.stdio import stdio_client
 from mcp import StdioServerParameters
 
 
-
 async def main():
     """Test the PBIXRay MCP server with a sample file, focusing on pagination and filtering"""
     # Use stricter output limits to simulate large model behavior
     server_params = StdioServerParameters(
-        command="python",
-        args=["src/pbixray_server.py", "--page-size", "3", "--max-rows", "5"],
-        env=None
+        command="python", args=["src/pbixray_server.py", "--page-size", "3", "--max-rows", "5"], env=None
     )
 
     # Path to the sample file
@@ -58,7 +55,9 @@ async def main():
 
             # Test with very small page size (1 row)
             print("\n5. Testing with minimal page size (1 row) - Page 1...")
-            table_result_single = await session.call_tool("get_table_contents", {"table_name": "Sales", "page": 1, "page_size": 1})
+            table_result_single = await session.call_tool(
+                "get_table_contents", {"table_name": "Sales", "page": 1, "page_size": 1}
+            )
             print_result(table_result_single)
 
             # Test filtering of DAX measures
@@ -85,7 +84,6 @@ async def main():
             print("\nAll tests completed successfully!")
 
 
-
 def print_result(result):
     """Print tool call results in a readable format"""
     for content in result.content:
@@ -97,7 +95,6 @@ def print_result(result):
             except json.JSONDecodeError:
                 # Regular text output
                 print(content.text)
-
 
 
 if __name__ == "__main__":
