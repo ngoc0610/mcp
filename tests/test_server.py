@@ -15,10 +15,10 @@ import asyncio
 from unittest.mock import patch, MagicMock
 
 # Add the src directory to the path so we can import the server module
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 # Mock the parse_args function before importing the module
-with patch('argparse.ArgumentParser.parse_args') as mock_parse_args:
+with patch("argparse.ArgumentParser.parse_args") as mock_parse_args:
     # Create a mock args object with the expected attributes
     mock_args = MagicMock()
     mock_args.disallow = []
@@ -39,56 +39,67 @@ class MockPBIXRay:
 
         # Create metadata as a DataFrame with Name and Value columns (matching real structure)
         import pandas as pd
-        self.metadata = pd.DataFrame({
-            "Name": ["version", "creator", "timestamp"],
-            "Value": ["1.0", "Test User", "2023-01-01"]
-        })
+
+        self.metadata = pd.DataFrame(
+            {"Name": ["version", "creator", "timestamp"], "Value": ["1.0", "Test User", "2023-01-01"]}
+        )
 
         self.size = 1024
 
         # Add additional properties for comprehensive testing
-        self.dax_measures = pd.DataFrame({
-            "TableName": ["Table1", "Table1", "Table2"],
-            "Name": ["Measure1", "Measure2", "Measure3"],
-            "Expression": ["SUM(Column1)", "AVG(Column1)", "COUNT(Column2)"]
-        })
+        self.dax_measures = pd.DataFrame(
+            {
+                "TableName": ["Table1", "Table1", "Table2"],
+                "Name": ["Measure1", "Measure2", "Measure3"],
+                "Expression": ["SUM(Column1)", "AVG(Column1)", "COUNT(Column2)"],
+            }
+        )
 
-        self.dax_columns = pd.DataFrame({
-            "TableName": ["Table1", "Table2"],
-            "ColumnName": ["CalcColumn1", "CalcColumn2"],
-            "Expression": ["Column1 + 10", "UPPER(Column2)"]
-        })
+        self.dax_columns = pd.DataFrame(
+            {
+                "TableName": ["Table1", "Table2"],
+                "ColumnName": ["CalcColumn1", "CalcColumn2"],
+                "Expression": ["Column1 + 10", "UPPER(Column2)"],
+            }
+        )
 
-        self.relationships = pd.DataFrame({
-            "FromTableName": ["Table1", "Table2"],
-            "FromColumnName": ["ID", "FK"],
-            "ToTableName": ["Table2", "Table1"],
-            "ToColumnName": ["FK", "ID"],
-            "IsActive": [True, False]
-        })
+        self.relationships = pd.DataFrame(
+            {
+                "FromTableName": ["Table1", "Table2"],
+                "FromColumnName": ["ID", "FK"],
+                "ToTableName": ["Table2", "Table1"],
+                "ToColumnName": ["FK", "ID"],
+                "IsActive": [True, False],
+            }
+        )
 
-        self.power_query = pd.DataFrame({
-            "TableName": ["Table1", "Table2"],
-            "Expression": ["let Source = #table(...", "let Source = #table(...)"]
-        })
+        self.power_query = pd.DataFrame(
+            {"TableName": ["Table1", "Table2"], "Expression": ["let Source = #table(...", "let Source = #table(...)"]}
+        )
 
-        self.schema = pd.DataFrame({
-            "TableName": ["Table1", "Table1", "Table2"],
-            "ColumnName": ["Column1", "Column2", "Column1"],
-            "DataType": ["Integer", "String", "Integer"]
-        })
+        self.schema = pd.DataFrame(
+            {
+                "TableName": ["Table1", "Table1", "Table2"],
+                "ColumnName": ["Column1", "Column2", "Column1"],
+                "DataType": ["Integer", "String", "Integer"],
+            }
+        )
 
-        self.statistics = pd.DataFrame({
-            "TableName": ["Table1", "Table2"],
-            "ColumnName": ["Column1", "Column1"],
-            "Cardinality": [3, 3],
-            "SizeInBytes": [12, 12]
-        })
+        self.statistics = pd.DataFrame(
+            {
+                "TableName": ["Table1", "Table2"],
+                "ColumnName": ["Column1", "Column1"],
+                "Cardinality": [3, 3],
+                "SizeInBytes": [12, 12],
+            }
+        )
 
     def get_table(self, table_name):
         # Return a mock pandas DataFrame
         import pandas as pd
+
         return pd.DataFrame({"Column1": [1, 2, 3], "Column2": ["A", "B", "C"]})
+
 
 # Helper function to run async tests
 
@@ -96,6 +107,7 @@ class MockPBIXRay:
 def run_async(coro):
     """Run an async function synchronously in tests"""
     return asyncio.run(coro)
+
 
 # Tests for the server functions
 
@@ -126,10 +138,10 @@ async def test_load_pbix_file(pbix_file_path):
     else:
         # Fall back to the mock approach if file is not found
         print(f"PBIX file not found: {pbix_file_path}, using mock approach")
-        with patch('os.path.getsize', return_value=1024):  # Small file to avoid thread pooling
+        with patch("os.path.getsize", return_value=1024):  # Small file to avoid thread pooling
             # Mock the PBIXRay class
-            with patch('pbixray_server.PBIXRay', MockPBIXRay):
-                with patch('os.path.exists', return_value=True):
+            with patch("pbixray_server.PBIXRay", MockPBIXRay):
+                with patch("os.path.exists", return_value=True):
                     result = await pbixray_server.load_pbix_file("/path/to/test.pbix", mock_context)
                     assert "Successfully loaded" in result
 
@@ -143,6 +155,7 @@ def test_get_tables(pbix_file_path):
         # Use actual PBIX file (load it synchronously for this test)
         try:
             from pbixray import PBIXRay
+
             pbixray_server.current_model = PBIXRay(str(pbix_file_path))
             using_real_file = True
             print(f"Using PBIX file for tables test: {pbix_file_path}")
@@ -182,6 +195,7 @@ def test_get_metadata(pbix_file_path):
         # Use actual PBIX file
         try:
             from pbixray import PBIXRay
+
             pbixray_server.current_model = PBIXRay(str(pbix_file_path))
             using_real_file = True
         except Exception:
@@ -214,6 +228,7 @@ def test_get_model_size(pbix_file_path):
         # Use actual PBIX file
         try:
             from pbixray import PBIXRay
+
             pbixray_server.current_model = PBIXRay(str(pbix_file_path))
             using_real_file = True
         except Exception:
@@ -324,7 +339,7 @@ async def test_large_file_handling(pbix_file_path):
 
     # Force the large file path by patching the file size detection
     # This will force the code to use the large file processing path
-    with patch('os.path.getsize', return_value=60 * 1024 * 1024):  # Mock as 60MB to trigger large file handling
+    with patch("os.path.getsize", return_value=60 * 1024 * 1024):  # Mock as 60MB to trigger large file handling
         result = await pbixray_server.load_pbix_file(str(pbix_file_path), mock_context)
         assert "Successfully loaded" in result
 

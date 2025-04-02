@@ -9,12 +9,7 @@ import pathlib
 
 def pytest_addoption(parser):
     """Add command-line options for testing"""
-    parser.addoption(
-        "--pbix-file",
-        action="store",
-        default=None,
-        help="Path to a custom PBIX file to use for testing"
-    )
+    parser.addoption("--pbix-file", action="store", default=None, help="Path to a custom PBIX file to use for testing")
 
 
 @pytest.fixture
