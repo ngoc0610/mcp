@@ -125,20 +125,8 @@ When using the PBIXRay MCP Server in WSL with Claude Desktop on Windows, you nee
 
 When configuring Claude Desktop to use the server from WSL, use a launcher script:
 
-1. Create a `run_server.sh` script in your project root:
-   ```bash
-   #!/bin/bash
-   cd "$(dirname "$0")"
-   source venv/bin/activate
-   python src/pbixray_server.py "$@"
-   ```
 
-2. Make it executable:
-   ```bash
-   chmod +x run_server.sh
-   ```
-
-3. Configure Claude Desktop with:
+ Configure Claude Desktop with:
    ```json
    "pbixray": {
      "command": "wsl.exe",
