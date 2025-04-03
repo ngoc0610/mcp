@@ -46,62 +46,9 @@ This is useful if you don't use certain functionality or if you don't want to ex
 | `get_statistics`      | Model     | Get statistics about the model with optional filtering             |
 | `get_model_summary`   | Model     | Get a comprehensive summary of the current Power BI model          |
 
-## Installation
-
-You can install PBIXRay MCP Server in two ways:
-
-### Option 1: Using pip
-
-```bash
-pip install pbixray-mcp-server
-```
-
-### Option 2: Using uv (Recommended)
-
-[uv](https://github.com/astral-sh/uv) is a fast Python package installer and resolver that can improve installation speed:
-
-```bash
-# Install uv if you don't have it
-curl -sSf https://astral.sh/uv/install.sh | bash
-
-# Install pbixray-mcp-server
-uv pip install pbixray-mcp-server
-```
-
-### Development Installation
-
-For developers working on the project:
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/username/pbixray-mcp.git
-   cd pbixray-mcp
-   ```
-
-2. Install in development mode:
-   ```bash
-   # Using pip
-   pip install -e .
-   
-   # Using uv (recommended)
-   uv pip install -e .
-   ```
-
 ## Usage
 
-1. If you installed from source, create a virtual environment and install dependencies:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   
-   # Using pip
-   pip install mcp pbixray numpy
-   
-   # Using uv (recommended)
-   uv pip install mcp pbixray numpy
-   ```
-
-2. Run the server:
+1. Run the server:
    ```bash
    # Run the server directly
    python src/pbixray_server.py
@@ -113,7 +60,7 @@ For developers working on the project:
    python src/pbixray_server.py --max-rows 500 --page-size 50
    ```
 
-3. Add the server configuration to your client configuration file. For example, for Claude Desktop:
+2. Add the server configuration to your client configuration file. For example, for Claude Desktop:
 
    ```json
    {
@@ -214,6 +161,59 @@ Windows paths (like `C:\Users\name\file.pbix`) cannot be directly accessed in WS
 |--------------|----------|
 | `C:\Users\Documents\file.pbix` | `/mnt/c/Users/Documents/file.pbix` |
 | `D:\Data\PowerBI\file.pbix` | `/mnt/d/Data/PowerBI/file.pbix` |
+
+## Installation
+
+You can install PBIXRay MCP Server in two ways:
+
+### Option 1: Using pip
+
+```bash
+pip install pbixray-mcp-server
+```
+
+### Option 2: Using uv (Recommended)
+
+[uv](https://github.com/astral-sh/uv) is a fast Python package installer and resolver that can improve installation speed:
+
+```bash
+# Install uv if you don't have it
+curl -sSf https://astral.sh/uv/install.sh | bash
+
+# Install pbixray-mcp-server
+uv pip install pbixray-mcp-server
+```
+
+### Development Installation
+
+For developers working on the project:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/username/pbixray-mcp.git
+   cd pbixray-mcp
+   ```
+
+2. Install in development mode:
+   ```bash
+   # Using pip
+   pip install -e .
+   
+   # Using uv (recommended)
+   uv pip install -e .
+   ```
+
+3. If installing from source, create a virtual environment and install dependencies:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   
+   # Using pip
+   pip install mcp pbixray numpy
+   
+   # Using uv (recommended)
+   uv pip install mcp pbixray numpy
+   ```
 
 ## Development
 
