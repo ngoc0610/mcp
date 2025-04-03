@@ -48,51 +48,32 @@ This is useful if you don't use certain functionality or if you don't want to ex
 
 ## Usage
 
-1. Run the server:
-   ```bash
-   # Run with environment activation
-   source venv/bin/activate
-   python src/pbixray_server.py
-   
-   # Add command-line options as needed:
-   python src/pbixray_server.py --disallow get_m_parameters get_power_query --max-rows 500 --page-size 50
-   ```
+## WSL (Recommended) 
 
-2. Add the server configuration to your client configuration file. For example, for Claude Desktop:
+Add the server configuration to your client configuration file. For example, for Claude Desktop:
 
-   ```json
-   {
-     "mcpServers": {
-       "pbixray": {
-         "command": "bash",
-         "args": [
-           "-c",
-           "source ~/dev/pbixray-mcp/venv/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py"
-         ],
-         "env": {}
-       }
-     }
-   }
-   ```
+```json
+{
+  "mcpServers": {
+    "pbixray": {
+      "command": "wsl.exe",
+      "args": [
+        "bash",
+        "-c",
+        "source ~/dev/pbixray-mcp/venv/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py"
+      ]
+    }
+  }
+}
+```
 
-   Command-line options can be added as needed:
+### WSL Path conversion (Claude Project instructions for instance)
 
-   ```json
-   {
-     "mcpServers": {
-       "pbixray": {
-         "command": "bash",
-         "args": [
-           "-c",
-           "source ~/dev/pbixray-mcp/venv/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py --max-rows 100 --page-size 50 --disallow get_power_query"
-         ],
-         "env": {}
-       }
-     }
-   }
-   ```
-
-For Windows users with WSL, see the [WSL Configuration](#using-with-windows-subsystem-for-linux-wsl) section below.
+When using the PBIXRay MCP Server in WSL with Claude Desktop on Windows, you need to be aware of path differences when loading PBIX files.
+Windows paths (like `C:\Users\name\file.pbix`) cannot be directly accessed in WSL. Let your AI assistant know how to convert between pats by adding 
+"Note that mcp server is running in wsl. Windows paths (like C:\Users\name\file.pbix) cannot be directly accessed in WSL. Instead, use WSL paths when referencing files:
+Windows: C:\Users\name\Downloads\file.pbix"
+WSL: /mnt/c/Users/name/Downloads/file.pbix" to project instructions or similar. 
 
 ### Command Line Options
 
@@ -102,9 +83,28 @@ The server supports several command line options:
 * `--max-rows N`: Set maximum number of rows returned (default: 100)
 * `--page-size N`: Set default page size for paginated results (default: 20)
 
+Command-line options can be added as needed in config json:
+
+   ```json
+   {
+    "mcpServers": {
+      "pbixray": {
+        "command": "wsl.exe",
+        "args": [
+          "bash",
+          "-c",
+           "source ~/dev/pbixray-mcp/venv/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py --max-rows 100 --page-size 50 --disallow get_power_query"
+         ],
+         "env": {}
+       }
+     }
+   }
+   ```
+
+
 ### Query Options
 
-Many tools support additional parameters for filtering and pagination:
+Tools support additional parameters for filtering and pagination:
 
 #### Filtering by Name
 
@@ -130,37 +130,7 @@ get_table_contents(table_name="Customer")
 get_table_contents(table_name="Customer", page=2, page_size=50)
 ```
 
-## Using with Windows Subsystem for Linux (WSL)
-
-When using the PBIXRay MCP Server in WSL with Claude Desktop on Windows, you need to be aware of path differences when loading PBIX files.
-
-When configuring Claude Desktop to use the server from WSL:
-
-```json
-{
-  "mcpServers": {
-    "pbixray": {
-      "command": "wsl.exe",
-      "args": [
-        "bash",
-        "-c",
-        "source ~/dev/pbixray-mcp/venv/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py"
-      ]
-    }
-  }
-}
-```
-
-### Path Conversion Guidelines
-
-Windows paths (like `C:\Users\name\file.pbix`) cannot be directly accessed in WSL. Instead:
-
-| Windows Path | WSL Path |
-|--------------|----------|
-| `C:\Users\Documents\file.pbix` | `/mnt/c/Users/Documents/file.pbix` |
-| `D:\Data\PowerBI\file.pbix` | `/mnt/d/Data/PowerBI/file.pbix` |
-
-## Installation
+## Development and testing
 
 You can install PBIXRay MCP Server:
 
@@ -189,10 +159,6 @@ For developers working on the project:
    source venv/bin/activate  # On Windows: venv\Scripts\activate
    pip install mcp pbixray numpy
    ```
-
-## Development
-
-Contributions are welcome! Please see the [ROADMAP.md](docs/ROADMAP.md) for planned improvements and areas where help is needed.
 
 ### Testing with Sample Files
 
@@ -226,6 +192,7 @@ mcp dev src/pbixray_server.py
 
 This starts an interactive session where you can call tools and test responses.
 
+
 ### Project Structure
 
 ```
@@ -250,13 +217,16 @@ pbixray-mcp/
     └── ROADMAP.md
 ```
 
+## Contributions
+
+Contributions are much welcomed! 
+
 ## Credits
 
 * [Hugoberry](https://github.com/Hugoberry/pbixray) - Original PBIXRay library
-* [rusiaaman](https://github.com/rusiaaman/wcgw) - WCGW framework
-* This was fully written by Claude using wcgw
+* [rusiaaman](https://github.com/rusiaaman/wcgw) - WCGW (This MCP was fully written by Claude using wcgw)
 
-## License
+## License (claude insists on adding these)
 
 [MIT License](LICENSE)
 
