@@ -50,12 +50,9 @@ This is useful if you don't use certain functionality or if you don't want to ex
 
 1. Run the server:
    ```bash
-   # Option 1: Run with environment activation (most reliable)
-   source pbixray-env/bin/activate
+   # Run with environment activation
+   source venv/bin/activate
    python src/pbixray_server.py
-   
-   # Option 2: Using uv with path to the environment
-   uv run --python-path ./pbixray-env/bin/python src/pbixray_server.py
    
    # Add command-line options as needed:
    python src/pbixray_server.py --disallow get_m_parameters get_power_query --max-rows 500 --page-size 50
@@ -70,7 +67,7 @@ This is useful if you don't use certain functionality or if you don't want to ex
          "command": "bash",
          "args": [
            "-c",
-           "source ~/dev/pbixray-mcp/pbixray-env/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py"
+           "source ~/dev/pbixray-mcp/venv/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py"
          ],
          "env": {}
        }
@@ -87,7 +84,7 @@ This is useful if you don't use certain functionality or if you don't want to ex
          "command": "bash",
          "args": [
            "-c",
-           "source ~/dev/pbixray-mcp/pbixray-env/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py --max-rows 100 --page-size 50 --disallow get_power_query"
+           "source ~/dev/pbixray-mcp/venv/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py --max-rows 100 --page-size 50 --disallow get_power_query"
          ],
          "env": {}
        }
@@ -137,7 +134,7 @@ get_table_contents(table_name="Customer", page=2, page_size=50)
 
 When using the PBIXRay MCP Server in WSL with Claude Desktop on Windows, you need to be aware of path differences when loading PBIX files.
 
-When configuring Claude Desktop to use the server from WSL with uv:
+When configuring Claude Desktop to use the server from WSL:
 
 ```json
 {
@@ -147,7 +144,7 @@ When configuring Claude Desktop to use the server from WSL with uv:
       "args": [
         "bash",
         "-c",
-        "source ~/dev/pbixray-mcp/pbixray-env/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py"
+        "source ~/dev/pbixray-mcp/venv/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py"
       ]
     }
   }
@@ -165,24 +162,10 @@ Windows paths (like `C:\Users\name\file.pbix`) cannot be directly accessed in WS
 
 ## Installation
 
-You can install PBIXRay MCP Server in two ways:
-
-### Option 1: Using pip
+You can install PBIXRay MCP Server:
 
 ```bash
 pip install pbixray-mcp-server
-```
-
-### Option 2: Using uv (Recommended)
-
-[uv](https://github.com/astral-sh/uv) is a fast Python package installer and resolver that can improve installation speed:
-
-```bash
-# Install uv if you don't have it
-curl -sSf https://astral.sh/uv/install.sh | bash
-
-# Install pbixray-mcp-server
-uv pip install pbixray-mcp-server
 ```
 
 ### Development Installation
@@ -197,23 +180,14 @@ For developers working on the project:
 
 2. Install in development mode:
    ```bash
-   # Using pip
    pip install -e .
-   
-   # Using uv (recommended)
-   uv pip install -e .
    ```
 
 3. If installing from source, create a virtual environment and install dependencies:
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
-   
-   # Using pip
    pip install mcp pbixray numpy
-   
-   # Using uv (recommended)
-   uv pip install mcp pbixray numpy
    ```
 
 ## Development
@@ -238,99 +212,19 @@ python test_metadata_fix.py
 
 The test scripts will help you understand how to interact with the server using the sample PBIX files provided in the `demo/` directory.
 
-### Development with uv
-
-The project includes helper scripts for managing Python environments with [uv](https://github.com/astral-sh/uv), a fast Python package installer and resolver that's significantly faster than pip.
-
-#### Quick Setup
-
-For the fastest setup, run:
-
-```bash
-./setup_dev.sh
-```
-
-This will:
-1. Install uv if not already installed
-2. Create a Python environment with all project dependencies
-3. Install development dependencies
-4. Build the package
-
-#### Managing Python Environments
-
-```bash
-# Create a new virtual environment with dependencies
-./uv_environment.sh create
-
-# Activate the environment
-source pbixray-env/bin/activate
-
-# Install development dependencies
-./uv_environment.sh dev
-
-# Update dependencies
-./uv_environment.sh update
-
-# Run tests
-./uv_environment.sh test
-
-# Run linting tools
-./uv_environment.sh lint
-
-# List installed packages
-./uv_environment.sh list
-```
-
-#### Advanced uv Features
-
-- **Lockfiles**: Generate a lockfile for reproducible environments: `uv lock`
-- **Exporting Requirements**: Export your environment to requirements.txt: `uv pip freeze > requirements.txt`
-- **Pip Compatibility**: uv is compatible with pip commands: `uv pip install/list/show`
-
-#### Troubleshooting uv
-
-If you encounter issues:
-1. Make sure uv is in your PATH
-2. Check that you're using the correct Python version
-3. Try deleting and recreating the environment
-4. Update uv to the latest version: `uv self update`
-
 ### Development Mode
 
 To test the server during development, use the MCP Inspector:
 
 ```bash
 # Activate your environment first
-source pbixray-env/bin/activate
+source venv/bin/activate
 
 # Run the MCP Inspector
 mcp dev src/pbixray_server.py
 ```
 
 This starts an interactive session where you can call tools and test responses.
-
-### Packaging and Distribution
-
-The project includes a packaging script that simplifies building with `uv`:
-
-```bash
-# Show help
-./package.sh --help
-
-# Build the package
-./package.sh build
-
-# Install in development mode
-./package.sh install
-
-# Clean build artifacts
-./package.sh clean
-
-# Run tests
-./package.sh test
-```
-
-This creates both wheel (.whl) and source distribution (.tar.gz) packages in the `dist/` directory.
 
 ### Project Structure
 
