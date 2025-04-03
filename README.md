@@ -46,13 +46,59 @@ This is useful if you don't use certain functionality or if you don't want to ex
 | `get_statistics`      | Model     | Get statistics about the model with optional filtering             |
 | `get_model_summary`   | Model     | Get a comprehensive summary of the current Power BI model          |
 
+## Installation
+
+You can install PBIXRay MCP Server in two ways:
+
+### Option 1: Using pip
+
+```bash
+pip install pbixray-mcp-server
+```
+
+### Option 2: Using uv (Recommended)
+
+[uv](https://github.com/astral-sh/uv) is a fast Python package installer and resolver that can improve installation speed:
+
+```bash
+# Install uv if you don't have it
+curl -sSf https://astral.sh/uv/install.sh | bash
+
+# Install pbixray-mcp-server
+uv pip install pbixray-mcp-server
+```
+
+### Development Installation
+
+For developers working on the project:
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/username/pbixray-mcp.git
+   cd pbixray-mcp
+   ```
+
+2. Install in development mode:
+   ```bash
+   # Using pip
+   pip install -e .
+   
+   # Using uv (recommended)
+   uv pip install -e .
+   ```
+
 ## Usage
 
-1. Create a virtual environment and install dependencies:
+1. If you installed from source, create a virtual environment and install dependencies:
    ```bash
    python -m venv venv
    source venv/bin/activate  # On Windows: venv\Scripts\activate
+   
+   # Using pip
    pip install mcp pbixray numpy
+   
+   # Using uv (recommended)
+   uv pip install mcp pbixray numpy
    ```
 
 2. Run the server:
@@ -80,6 +126,25 @@ This is useful if you don't use certain functionality or if you don't want to ex
      }
    }
    ```
+
+   If you're using uv to manage your Python environment, you can configure Claude Desktop to run the server from the uv-managed environment:
+
+   ```json
+   {
+     "mcpServers": {
+       "pbixray": {
+         "command": "bash",
+         "args": [
+           "-c",
+           "source ~/dev/pbixray-mcp/pbixray-env/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py"
+         ],
+         "env": {}
+       }
+     }
+   }
+   ```
+
+   For additional options, see the full [UV_GUIDE.md](UV_GUIDE.md).
 
 For Windows users with WSL, see the [WSL Configuration](#using-with-windows-subsystem-for-linux-wsl) section below.
 
@@ -169,15 +234,78 @@ python test_metadata_fix.py
 
 The test scripts will help you understand how to interact with the server using the sample PBIX files provided in the `demo/` directory.
 
+### Development with uv
+
+The project includes a helper script for managing Python environments with [uv](https://github.com/astral-sh/uv), a fast Python package installer and resolver:
+
+```bash
+# Make the script executable if needed
+chmod +x uv_environment.sh
+
+# Show help
+./uv_environment.sh --help
+
+# Create a new virtual environment with dependencies
+./uv_environment.sh create
+
+# Activate the environment
+source pbixray-env/bin/activate  # or follow the instructions from ./uv_environment.sh activate
+
+# Install development dependencies
+./uv_environment.sh dev
+
+# Update dependencies
+./uv_environment.sh update
+
+# Run tests
+./uv_environment.sh test
+
+# Run linting tools
+./uv_environment.sh lint
+
+# List installed packages
+./uv_environment.sh list
+```
+
 ### Development Mode
 
 To test the server during development, use the MCP Inspector:
 
 ```bash
+# Activate your environment first
+source pbixray-env/bin/activate
+
+# Run the MCP Inspector
 mcp dev src/pbixray_server.py
 ```
 
 This starts an interactive session where you can call tools and test responses.
+
+### Packaging and Distribution
+
+The project includes a packaging script that uses `uv` for building and distribution:
+
+```bash
+# Make the script executable if needed
+chmod +x package.sh
+
+# Show help
+./package.sh --help
+
+# Build the package
+./package.sh build
+
+# Install in development mode
+./package.sh install
+
+# Clean build artifacts
+./package.sh clean
+
+# Run tests
+./package.sh test
+```
+
+This script handles all aspects of the packaging process.
 
 ### Project Structure
 
