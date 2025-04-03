@@ -119,20 +119,6 @@ For developers working on the project:
    {
      "mcpServers": {
        "pbixray": {
-         "command": "python",
-         "args": ["path/to/pbixray-mcp/src/pbixray_server.py"],
-         "env": {}
-       }
-     }
-   }
-   ```
-
-   If you're using uv to manage your Python environment, you can configure Claude Desktop to run the server from the uv-managed environment:
-
-   ```json
-   {
-     "mcpServers": {
-       "pbixray": {
          "command": "bash",
          "args": [
            "-c",
@@ -144,7 +130,22 @@ For developers working on the project:
    }
    ```
 
-   For additional options, see the full [UV_GUIDE.md](UV_GUIDE.md).
+   Command-line options can be added as needed:
+
+   ```json
+   {
+     "mcpServers": {
+       "pbixray": {
+         "command": "bash",
+         "args": [
+           "-c",
+           "source ~/dev/pbixray-mcp/pbixray-env/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py --max-rows 100 --page-size 50 --disallow get_power_query"
+         ],
+         "env": {}
+       }
+     }
+   }
+   ```
 
 For Windows users with WSL, see the [WSL Configuration](#using-with-windows-subsystem-for-linux-wsl) section below.
 
@@ -188,20 +189,22 @@ get_table_contents(table_name="Customer", page=2, page_size=50)
 
 When using the PBIXRay MCP Server in WSL with Claude Desktop on Windows, you need to be aware of path differences when loading PBIX files.
 
-When configuring Claude Desktop to use the server from WSL, use a launcher script:
+When configuring Claude Desktop to use the server from WSL with uv:
 
-
- Configure Claude Desktop with:
-   ```json
-   "pbixray": {
-     "command": "wsl.exe",
-     "args": [
-       "bash",
-       "-c",
-       "/home/username/dev/pbixray-mcp/run_server.sh"
-     ]
-   }
-   ```
+```json
+{
+  "mcpServers": {
+    "pbixray": {
+      "command": "wsl.exe",
+      "args": [
+        "bash",
+        "-c",
+        "source ~/dev/pbixray-mcp/pbixray-env/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py"
+      ]
+    }
+  }
+}
+```
 
 ### Path Conversion Guidelines
 
@@ -236,20 +239,30 @@ The test scripts will help you understand how to interact with the server using 
 
 ### Development with uv
 
-The project includes a helper script for managing Python environments with [uv](https://github.com/astral-sh/uv), a fast Python package installer and resolver:
+The project includes helper scripts for managing Python environments with [uv](https://github.com/astral-sh/uv), a fast Python package installer and resolver that's significantly faster than pip.
+
+#### Quick Setup
+
+For the fastest setup, run:
 
 ```bash
-# Make the script executable if needed
-chmod +x uv_environment.sh
+./setup_dev.sh
+```
 
-# Show help
-./uv_environment.sh --help
+This will:
+1. Install uv if not already installed
+2. Create a Python environment with all project dependencies
+3. Install development dependencies
+4. Build the package
 
+#### Managing Python Environments
+
+```bash
 # Create a new virtual environment with dependencies
 ./uv_environment.sh create
 
 # Activate the environment
-source pbixray-env/bin/activate  # or follow the instructions from ./uv_environment.sh activate
+source pbixray-env/bin/activate
 
 # Install development dependencies
 ./uv_environment.sh dev
@@ -267,6 +280,20 @@ source pbixray-env/bin/activate  # or follow the instructions from ./uv_environm
 ./uv_environment.sh list
 ```
 
+#### Advanced uv Features
+
+- **Lockfiles**: Generate a lockfile for reproducible environments: `uv lock`
+- **Exporting Requirements**: Export your environment to requirements.txt: `uv pip freeze > requirements.txt`
+- **Pip Compatibility**: uv is compatible with pip commands: `uv pip install/list/show`
+
+#### Troubleshooting uv
+
+If you encounter issues:
+1. Make sure uv is in your PATH
+2. Check that you're using the correct Python version
+3. Try deleting and recreating the environment
+4. Update uv to the latest version: `uv self update`
+
 ### Development Mode
 
 To test the server during development, use the MCP Inspector:
@@ -283,12 +310,9 @@ This starts an interactive session where you can call tools and test responses.
 
 ### Packaging and Distribution
 
-The project includes a packaging script that uses `uv` for building and distribution:
+The project includes a packaging script that simplifies building with `uv`:
 
 ```bash
-# Make the script executable if needed
-chmod +x package.sh
-
 # Show help
 ./package.sh --help
 
@@ -305,7 +329,7 @@ chmod +x package.sh
 ./package.sh test
 ```
 
-This script handles all aspects of the packaging process.
+This creates both wheel (.whl) and source distribution (.tar.gz) packages in the `dist/` directory.
 
 ### Project Structure
 
