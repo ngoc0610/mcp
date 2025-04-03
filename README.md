@@ -50,14 +50,15 @@ This is useful if you don't use certain functionality or if you don't want to ex
 
 1. Run the server:
    ```bash
-   # Using uv (recommended)
-   uv run src/pbixray_server.py
-   
-   # Or with command-line options
-   uv run src/pbixray_server.py --disallow get_m_parameters get_power_query --max-rows 500 --page-size 50
-   
-   # Alternatively, run directly if already in a Python environment
+   # Option 1: Run with environment activation (most reliable)
+   source pbixray-env/bin/activate
    python src/pbixray_server.py
+   
+   # Option 2: Using uv with path to the environment
+   uv run --python-path ./pbixray-env/bin/python src/pbixray_server.py
+   
+   # Add command-line options as needed:
+   python src/pbixray_server.py --disallow get_m_parameters get_power_query --max-rows 500 --page-size 50
    ```
 
 2. Add the server configuration to your client configuration file. For example, for Claude Desktop:
@@ -66,10 +67,10 @@ This is useful if you don't use certain functionality or if you don't want to ex
    {
      "mcpServers": {
        "pbixray": {
-         "command": "uv",
+         "command": "bash",
          "args": [
-           "run",
-           "~/dev/pbixray-mcp/src/pbixray_server.py"
+           "-c",
+           "source ~/dev/pbixray-mcp/pbixray-env/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py"
          ],
          "env": {}
        }
@@ -83,13 +84,10 @@ This is useful if you don't use certain functionality or if you don't want to ex
    {
      "mcpServers": {
        "pbixray": {
-         "command": "uv",
+         "command": "bash",
          "args": [
-           "run",
-           "~/dev/pbixray-mcp/src/pbixray_server.py",
-           "--max-rows", "100",
-           "--page-size", "50",
-           "--disallow", "get_power_query"
+           "-c",
+           "source ~/dev/pbixray-mcp/pbixray-env/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py --max-rows 100 --page-size 50 --disallow get_power_query"
          ],
          "env": {}
        }
@@ -147,9 +145,9 @@ When configuring Claude Desktop to use the server from WSL with uv:
     "pbixray": {
       "command": "wsl.exe",
       "args": [
-        "~/.local/bin/uv",
-        "run",
-        "~/dev/pbixray-mcp/src/pbixray_server.py"
+        "bash",
+        "-c",
+        "source ~/dev/pbixray-mcp/pbixray-env/bin/activate && python ~/dev/pbixray-mcp/src/pbixray_server.py"
       ]
     }
   }
