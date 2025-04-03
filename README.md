@@ -50,17 +50,15 @@ This is useful if you don't use certain functionality or if you don't want to ex
 
 1. Run the server:
    ```bash
-   # Run the server directly (if using a regular Python environment)
+   # Option 1: Run the server directly (if in a Python environment)
    python src/pbixray_server.py
 
-   # Or using uv-managed environment (recommended)
-   source pbixray-env/bin/activate && python src/pbixray_server.py
+   # Option 2: Using a uv-created environment (recommended)
+   source pbixray-env/bin/activate
+   python src/pbixray_server.py
    
-   # With disabled tools for security
-   python src/pbixray_server.py --disallow get_m_parameters get_power_query
-   
-   # Customize pagination and row limits 
-   python src/pbixray_server.py --max-rows 500 --page-size 50
+   # Add command-line options as needed:
+   python src/pbixray_server.py --disallow get_m_parameters get_power_query --max-rows 500 --page-size 50
    ```
 
 2. Add the server configuration to your client configuration file. For example, for Claude Desktop:
