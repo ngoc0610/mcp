@@ -33,6 +33,7 @@ with patch("argparse.ArgumentParser.parse_args") as mock_parse_args:
 
 class MockPBIXRayWithFilterableData:
     """Mock PBIXRay class with data suitable for testing filters"""
+
     def __init__(self, file_path):
         self.file_path = file_path
         self.tables = ["Sales", "Products", "Locations"]
@@ -42,26 +43,42 @@ class MockPBIXRayWithFilterableData:
         """Return a mock pandas DataFrame with data suitable for filtering tests"""
         if table_name == "Sales":
             # Create a sales table with numeric and string columns for testing filters
-            return pd.DataFrame({
-                "product_id": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-                "location_id": ["madrid", "barcelona", "albacete", "madrid", "barcelona", 
-                               "albacete", "madrid", "barcelona", "albacete", "madrid"],
-                "period": [100, 110, 120, 130, 140, 150, 160, 170, 180, 190],
-                "amount": [10.5, 20.3, 15.7, 8.2, 30.1, 25.0, 12.8, 18.9, 22.4, 17.6],
-                "is_completed": [True, False, True, True, False, True, False, True, False, True]
-            })
+            return pd.DataFrame(
+                {
+                    "product_id": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                    "location_id": [
+                        "madrid",
+                        "barcelona",
+                        "albacete",
+                        "madrid",
+                        "barcelona",
+                        "albacete",
+                        "madrid",
+                        "barcelona",
+                        "albacete",
+                        "madrid",
+                    ],
+                    "period": [100, 110, 120, 130, 140, 150, 160, 170, 180, 190],
+                    "amount": [10.5, 20.3, 15.7, 8.2, 30.1, 25.0, 12.8, 18.9, 22.4, 17.6],
+                    "is_completed": [True, False, True, True, False, True, False, True, False, True],
+                }
+            )
         elif table_name == "Products":
-            return pd.DataFrame({
-                "product_id": [1, 2, 3, 4, 5],
-                "product_name": ["Laptop", "Phone", "Tablet", "Monitor", "Keyboard"],
-                "price": [1200.50, 800.25, 350.99, 250.50, 75.00]
-            })
+            return pd.DataFrame(
+                {
+                    "product_id": [1, 2, 3, 4, 5],
+                    "product_name": ["Laptop", "Phone", "Tablet", "Monitor", "Keyboard"],
+                    "price": [1200.50, 800.25, 350.99, 250.50, 75.00],
+                }
+            )
         elif table_name == "Locations":
-            return pd.DataFrame({
-                "location_id": ["madrid", "barcelona", "albacete", "valencia", "bilbao"],
-                "country": ["Spain", "Spain", "Spain", "Spain", "Spain"],
-                "employees": [50, 40, 20, 30, 25]
-            })
+            return pd.DataFrame(
+                {
+                    "location_id": ["madrid", "barcelona", "albacete", "valencia", "bilbao"],
+                    "country": ["Spain", "Spain", "Spain", "Spain", "Spain"],
+                    "employees": [50, 40, 20, 30, 25],
+                }
+            )
         else:
             # Return an empty DataFrame for unknown tables
             return pd.DataFrame()
@@ -83,22 +100,18 @@ async def test_get_filtered_table_contents_basic():
 
     # Test with a simple equality filter
     result = await pbixray_server.get_table_contents(
-        mock_context, 
-        table_name="Sales", 
-        filters="location_id=albacete",
-        page=1, 
-        page_size=10
+        mock_context, table_name="Sales", filters="location_id=albacete", page=1, page_size=10
     )
-    
+
     # Verify the result
     assert result, "Expected filtered table contents"
     assert isinstance(result, str), "Expected JSON string"
-    
+
     # Parse JSON to make sure it's valid
     parsed = json.loads(result)
     assert "pagination" in parsed, "Expected pagination info"
     assert "data" in parsed, "Expected data in response"
-    
+
     # Verify the filter was applied correctly
     assert parsed["pagination"]["total_rows"] == 3, "Expected 3 rows with location_id=albacete"
     assert all(row["location_id"] == "albacete" for row in parsed["data"]), "All rows should have location_id=albacete"
@@ -124,13 +137,9 @@ async def test_get_filtered_table_contents_numeric_comparison():
 
     # Test with numeric comparison filters
     result = await pbixray_server.get_table_contents(
-        mock_context, 
-        table_name="Sales", 
-        filters="period>150;period<180",
-        page=1, 
-        page_size=10
+        mock_context, table_name="Sales", filters="period>150;period<180", page=1, page_size=10
     )
-    
+
     # Verify the result
     parsed = json.loads(result)
     assert parsed["pagination"]["total_rows"] == 2, "Expected 2 rows with period between 150 and 180"
@@ -157,17 +166,13 @@ async def test_get_filtered_table_contents_multiple_filters():
 
     # Test with multiple filters of different types
     result = await pbixray_server.get_table_contents(
-        mock_context, 
-        table_name="Sales", 
-        filters="location_id=madrid;period>120;amount<20",
-        page=1, 
-        page_size=10
+        mock_context, table_name="Sales", filters="location_id=madrid;period>120;amount<20", page=1, page_size=10
     )
-    
+
     # Verify the result
     parsed = json.loads(result)
     assert parsed["pagination"]["total_rows"] > 0, "Expected at least one row matching all filters"
-    
+
     # Verify all filters were applied correctly
     for row in parsed["data"]:
         assert row["location_id"] == "madrid", "All rows should have location_id=madrid"
@@ -195,31 +200,23 @@ async def test_get_filtered_table_contents_pagination():
 
     # Test with a filter that returns multiple rows and use pagination
     result_page1 = await pbixray_server.get_table_contents(
-        mock_context, 
-        table_name="Sales", 
-        filters="period>100",
-        page=1, 
-        page_size=3
+        mock_context, table_name="Sales", filters="period>100", page=1, page_size=3
     )
-    
+
     result_page2 = await pbixray_server.get_table_contents(
-        mock_context, 
-        table_name="Sales", 
-        filters="period>100",
-        page=2, 
-        page_size=3
+        mock_context, table_name="Sales", filters="period>100", page=2, page_size=3
     )
-    
+
     # Verify the pagination
     parsed_page1 = json.loads(result_page1)
     parsed_page2 = json.loads(result_page2)
-    
+
     assert parsed_page1["pagination"]["current_page"] == 1, "First result should be page 1"
     assert parsed_page2["pagination"]["current_page"] == 2, "Second result should be page 2"
-    
+
     assert len(parsed_page1["data"]) == 3, "Page 1 should have 3 rows"
     assert len(parsed_page2["data"]) > 0, "Page 2 should have at least 1 row"
-    
+
     # Verify the rows are different between pages
     page1_ids = [row["product_id"] for row in parsed_page1["data"]]
     page2_ids = [row["product_id"] for row in parsed_page2["data"]]
@@ -246,37 +243,25 @@ async def test_get_filtered_table_contents_error_handling():
 
     # Test with non-existent column
     result = await pbixray_server.get_table_contents(
-        mock_context, 
-        table_name="Sales", 
-        filters="nonexistent_column=value",
-        page=1, 
-        page_size=10
+        mock_context, table_name="Sales", filters="nonexistent_column=value", page=1, page_size=10
     )
-    
+
     assert "Error" in result, "Expected error message for non-existent column"
     assert "not found" in result, "Error should indicate column not found"
-    
+
     # Test with invalid filter syntax
     result = await pbixray_server.get_table_contents(
-        mock_context, 
-        table_name="Sales", 
-        filters="invalid_filter_syntax",
-        page=1, 
-        page_size=10
+        mock_context, table_name="Sales", filters="invalid_filter_syntax", page=1, page_size=10
     )
-    
+
     assert "Error" in result, "Expected error message for invalid filter syntax"
     assert "Invalid filter condition" in result, "Error should indicate invalid filter condition"
-    
+
     # Test with invalid page number
     result = await pbixray_server.get_table_contents(
-        mock_context, 
-        table_name="Sales", 
-        filters="location_id=madrid",
-        page=999, 
-        page_size=10
+        mock_context, table_name="Sales", filters="location_id=madrid", page=999, page_size=10
     )
-    
+
     assert "Error" in result, "Expected error message for invalid page number"
     assert "does not exist" in result, "Error should indicate page does not exist"
 
@@ -310,24 +295,19 @@ async def test_get_filtered_table_contents_with_real_file(pbix_file_path):
 
     # Get the first table
     first_table = tables[0]
-    
+
     # Get the table contents to find a column to filter on
-    table_contents_json = await pbixray_server.get_table_contents(
-        mock_context, 
-        table_name=first_table, 
-        page=1, 
-        page_size=5
-    )
-    
+    table_contents_json = await pbixray_server.get_table_contents(mock_context, table_name=first_table, page=1, page_size=5)
+
     table_contents = json.loads(table_contents_json)
-    
+
     if not table_contents["data"]:
         pytest.skip(f"No data found in table {first_table}")
-    
+
     # Get the first column name from the data
     first_column = list(table_contents["data"][0].keys())[0]
     first_value = table_contents["data"][0][first_column]
-    
+
     # Create a filter based on the first column and value
     if isinstance(first_value, (int, float)):
         # For numeric values, use a range filter
@@ -335,25 +315,21 @@ async def test_get_filtered_table_contents_with_real_file(pbix_file_path):
     else:
         # For string values, use an equality filter
         filter_expr = f"{first_column}={first_value}"
-    
+
     # Test the filtered table contents
     result = await pbixray_server.get_table_contents(
-        mock_context, 
-        table_name=first_table, 
-        filters=filter_expr,
-        page=1, 
-        page_size=5
+        mock_context, table_name=first_table, filters=filter_expr, page=1, page_size=5
     )
-    
+
     # Verify the result
     assert result, "Expected filtered table contents"
     assert isinstance(result, str), "Expected JSON string"
-    
+
     # Parse JSON to make sure it's valid
     parsed = json.loads(result)
     assert "pagination" in parsed, "Expected pagination info"
     assert "data" in parsed, "Expected data in response"
-    
+
     # Verify that we got some data back
     assert len(parsed["data"]) > 0, "Expected at least one row in the filtered results"
 

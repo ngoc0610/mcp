@@ -42,7 +42,7 @@ async def main():
             print("\n2. Listing tables...")
             tables_result = await session.call_tool("get_tables", {})
             print_result(tables_result)
-            
+
             # Parse the tables result to get the first table
             tables = []
             for content in tables_result.content:
@@ -52,32 +52,30 @@ async def main():
                         break
                     except json.JSONDecodeError:
                         pass
-            
+
             if not tables:
                 print("No tables found in the PBIX file")
                 return
-                
+
             first_table = tables[0]
             print(f"\nUsing table: {first_table}")
-            
+
             # Get the schema to find columns to filter on
             print("\n3. Getting schema for the first table...")
             schema_result = await session.call_tool("get_schema", {"table_name": first_table})
             print_result(schema_result)
-            
+
             # Get a sample of the table contents to find values to filter on
             print("\n4. Getting sample table contents...")
-            contents_result = await session.call_tool("get_table_contents", {
-                "table_name": first_table,
-                "page": 1,
-                "page_size": 5
-            })
+            contents_result = await session.call_tool(
+                "get_table_contents", {"table_name": first_table, "page": 1, "page_size": 5}
+            )
             print_result(contents_result)
-            
+
             # Parse the contents to find a column to filter on
             column_to_filter = None
             filter_value = None
-            
+
             for content in contents_result.content:
                 if hasattr(content, "text") and content.text:
                     try:
@@ -90,11 +88,11 @@ async def main():
                             break
                     except (json.JSONDecodeError, KeyError, IndexError):
                         pass
-            
+
             if not column_to_filter:
                 print("Could not find a column to filter on")
                 return
-                
+
             # Create filter expressions based on the data type
             if isinstance(filter_value, (int, float)):
                 # For numeric values, create a range filter
@@ -104,16 +102,13 @@ async def main():
                 # For string values, create an equality filter
                 filter_expr = f"{column_to_filter}={filter_value}"
                 print(f"\n5. Testing equality filter: {filter_expr}")
-            
+
             # Test the filtered table contents
-            filtered_result = await session.call_tool("get_table_contents", {
-                "table_name": first_table,
-                "filters": filter_expr,
-                "page": 1,
-                "page_size": 5
-            })
+            filtered_result = await session.call_tool(
+                "get_table_contents", {"table_name": first_table, "filters": filter_expr, "page": 1, "page_size": 5}
+            )
             print_result(filtered_result)
-            
+
             # Test multiple filters if we have numeric columns
             # Try to find a numeric column
             numeric_column = None
@@ -132,20 +127,17 @@ async def main():
                                 break
                     except (json.JSONDecodeError, KeyError, IndexError):
                         pass
-            
+
             if numeric_column:
                 # Create a multi-filter expression
                 multi_filter_expr = f"{column_to_filter}={filter_value};{numeric_column}>0"
                 print(f"\n6. Testing multiple filters: {multi_filter_expr}")
-                
-                multi_filtered_result = await session.call_tool("get_table_contents", {
-                    "table_name": first_table,
-                    "filters": multi_filter_expr,
-                    "page": 1,
-                    "page_size": 5
-                })
+
+                multi_filtered_result = await session.call_tool(
+                    "get_table_contents", {"table_name": first_table, "filters": multi_filter_expr, "page": 1, "page_size": 5}
+                )
                 print_result(multi_filtered_result)
-            
+
             print("\nAll tests completed successfully!")
 
 

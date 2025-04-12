@@ -567,21 +567,15 @@ async def get_relationships(ctx: Context, from_table: str = None, to_table: str 
 
 
 @mcp.tool()
-async def get_table_contents(
-    ctx: Context, 
-    table_name: str, 
-    filters: str = None,
-    page: int = 1, 
-    page_size: int = None
-) -> str:
+async def get_table_contents(ctx: Context, table_name: str, filters: str = None, page: int = 1, page_size: int = None) -> str:
     """
     Retrieve the contents of a specified table with optional filtering and pagination.
 
     Args:
         table_name: Name of the table to retrieve
         filters: Optional filter conditions separated by semicolons (;)
-                Examples: 
-                - "locationid=albacete" 
+                Examples:
+                - "locationid=albacete"
                 - "period>100;period<200"
                 - "locationid=albacete;period>100;period<200"
         page: Page number to retrieve (starting from 1)
@@ -596,6 +590,7 @@ async def get_table_contents(
 
     try:
         import time
+
         start_time = time.time()
 
         # Use command-line page size if not specified
@@ -623,35 +618,35 @@ async def get_table_contents(
 
         # Run the table fetching in a thread pool
         table_contents = await anyio.to_thread.run_sync(fetch_table)
-        
+
         # Report progress after fetching table
         await ctx.report_progress(25, 100)
-        
+
         # Apply filters if provided
         if filters:
             await ctx.info(f"Applying filters: {filters}")
-            
+
             # Split the filters by semicolon
-            filter_conditions = filters.split(';')
-            
+            filter_conditions = filters.split(";")
+
             # Process each filter condition
             for condition in filter_conditions:
                 # Find the operator in the condition
-                for op in ['>=', '<=', '!=', '=', '>', '<']:
+                for op in [">=", "<=", "!=", "=", ">", "<"]:
                     if op in condition:
                         col_name, value = condition.split(op, 1)
                         col_name = col_name.strip()
                         value = value.strip()
-                        
+
                         # Check if column exists
                         if col_name not in table_contents.columns:
                             return f"Error: Column '{col_name}' not found in table '{table_name}'."
-                        
+
                         # Apply the filter based on the operator
                         try:
                             # Try to convert value to numeric if possible
                             try:
-                                if '.' in value:
+                                if "." in value:
                                     numeric_value = float(value)
                                 else:
                                     numeric_value = int(value)
@@ -659,30 +654,30 @@ async def get_table_contents(
                             except ValueError:
                                 # Keep as string if not numeric
                                 pass
-                            
+
                             # Apply the appropriate filter
-                            if op == '=':
+                            if op == "=":
                                 table_contents = table_contents[table_contents[col_name] == value]
-                            elif op == '>':
+                            elif op == ">":
                                 table_contents = table_contents[table_contents[col_name] > value]
-                            elif op == '<':
+                            elif op == "<":
                                 table_contents = table_contents[table_contents[col_name] < value]
-                            elif op == '>=':
+                            elif op == ">=":
                                 table_contents = table_contents[table_contents[col_name] >= value]
-                            elif op == '<=':
+                            elif op == "<=":
                                 table_contents = table_contents[table_contents[col_name] <= value]
-                            elif op == '!=':
+                            elif op == "!=":
                                 table_contents = table_contents[table_contents[col_name] != value]
                         except Exception as e:
                             return f"Error applying filter '{condition}': {str(e)}"
-                        
+
                         break
                 else:
                     return f"Error: Invalid filter condition '{condition}'. Must contain one of these operators: =, >, <, >=, <=, !="
-        
+
         # Report progress after filtering
         await ctx.report_progress(50, 100)
-        
+
         # Get total rows after filtering
         total_rows = len(table_contents)
         total_pages = (total_rows + page_size - 1) // page_size
@@ -735,7 +730,9 @@ async def get_table_contents(
         elapsed_time = time.time() - start_time
         if elapsed_time > 1.0:  # Only log if it took more than a second
             if filters:
-                await ctx.info(f"Retrieved filtered data from '{table_name}' ({total_rows} rows after filtering) in {elapsed_time:.2f} seconds")
+                await ctx.info(
+                    f"Retrieved filtered data from '{table_name}' ({total_rows} rows after filtering) in {elapsed_time:.2f} seconds"
+                )
             else:
                 await ctx.info(f"Retrieved data from '{table_name}' ({total_rows} rows) in {elapsed_time:.2f} seconds")
 
@@ -850,15 +847,15 @@ async def get_model_summary(ctx: Context) -> str:
 def load_file_sync(file_path):
     """
     Load a PBIX file synchronously.
-    
+
     Args:
         file_path: Path to the PBIX file to load
-    
+
     Returns:
         A message indicating success or failure
     """
     global current_model, current_model_path
-    
+
     file_path = os.path.expanduser(file_path)
     if not os.path.exists(file_path):
         return f"Error: File '{file_path}' not found."
@@ -870,11 +867,11 @@ def load_file_sync(file_path):
         print(f"Loading PBIX file: {file_path}", file=sys.stderr)
         file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
         print(f"File size: {file_size_mb:.2f} MB", file=sys.stderr)
-        
+
         # Load the file
         current_model = PBIXRay(file_path)
         current_model_path = file_path
-        
+
         return f"Successfully loaded '{os.path.basename(file_path)}'"
     except Exception as e:
         print(f"Error loading PBIX file: {str(e)}", file=sys.stderr)
@@ -898,7 +895,7 @@ def main():
     # The default FastMCP timeout is around 30 seconds which can be too short for large PBIX files
     # Set a higher default timeout for all operations
     print("Configuring extended timeouts for large file handling...", file=sys.stderr)
-    
+
     # Check if we need to auto-load a file
     if AUTO_LOAD_FILE:
         file_path = os.path.expanduser(AUTO_LOAD_FILE)
