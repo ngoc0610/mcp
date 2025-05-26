@@ -1,5 +1,11 @@
 [![MseeP.ai Security Assessment Badge](https://mseep.net/pr/jonaolden-pbixray-mcp-server-badge.png)](https://mseep.ai/app/jonaolden-pbixray-mcp-server)
 
+## Info! 
+those interested in this project might also be interested in
+this follow-up project, [tabular-mcp](https://github.com/jonaolden/tabular-mcp), which allows running DAX queries against a local PowerBI model. 
+support is highly appreciated !
+
+
 # PBIXRay MCP Server
 
 A [Model Context Protocol][mcp] (MCP) server for PBIXRay.
