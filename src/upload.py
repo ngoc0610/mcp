@@ -30,7 +30,10 @@ def _install_excepthook():
         print("UNCAUGHT EXCEPTION:", file=sys.stderr, flush=True)
         traceback.print_exception(exctype, value, tb, file=sys.stderr)
         sys.stderr.flush()
+
     sys.excepthook = _hook
+
+
 _install_excepthook()
 # endregion
 
@@ -39,8 +42,8 @@ _install_excepthook()
 mcp = FastMCP("powerbi-server")
 
 POWERBI_API = "https://api.powerbi.com/v1.0/myorg"
-FABRIC_API  = "https://api.fabric.microsoft.com/v1"
-PBI_SCOPE   = "https://analysis.windows.net/powerbi/api/.default"
+FABRIC_API = "https://api.fabric.microsoft.com/v1"
+PBI_SCOPE = "https://analysis.windows.net/powerbi/api/.default"
 # endregion
 
 # region State
@@ -48,11 +51,12 @@ STATE = SimpleNamespace(
     tenant_id=None,
     client_id=None,
     client_secret=None,
-    access_token=None,   # Bearer token hiện tại
-    app=None,            # msal.ConfidentialClientApplication
+    access_token=None,  # Bearer token hiện tại
+    app=None,  # msal.ConfidentialClientApplication
     scopes=[PBI_SCOPE],
 )
 # endregion
+
 
 # region Auth helpers
 def _build_app(tenant_id: str, client_id: str, client_secret: str) -> msal.ConfidentialClientApplication:
@@ -62,6 +66,7 @@ def _build_app(tenant_id: str, client_id: str, client_secret: str) -> msal.Confi
         client_credential=client_secret,
     )
 
+
 def _acquire_token() -> str:
     if not STATE.app:
         raise RuntimeError("Not connected. Call connect_powerbi(...) first.")
@@ -70,11 +75,15 @@ def _acquire_token() -> str:
         raise RuntimeError(res.get("error_description") or str(res))
     return res["access_token"]
 
+
 def _ensure_token() -> str:
     if not STATE.access_token:
         STATE.access_token = _acquire_token()
     return STATE.access_token
+
+
 # endregion
+
 
 # region HTTP helpers (sync) – dùng cho các helper khác
 def make_request(url: str, method: str = "GET", data: dict | None = None):
@@ -101,6 +110,7 @@ def make_request(url: str, method: str = "GET", data: dict | None = None):
     except Exception as e:
         return {"error": str(e)}
 
+
 def wait_for_operation(location_url: str, retry_seconds: int = 30):
     """Poll long-running operation until Succeeded/Failed."""
     try:
@@ -125,6 +135,8 @@ def wait_for_operation(location_url: str, retry_seconds: int = 30):
         if status in ("Failed", "Error"):
             return {"error": data.get("error") or data}
         # else keep waiting
+
+
 # endregion
 
 
@@ -138,6 +150,7 @@ async def _ctx_info(ctx: _Context | None, msg: str):
     except Exception:
         print(f"[info] {msg}", file=sys.stderr, flush=True)
 
+
 async def _ctx_progress(ctx: _Context | None, current: int, total: int):
     try:
         if ctx:
@@ -146,6 +159,8 @@ async def _ctx_progress(ctx: _Context | None, current: int, total: int):
             print(f"[progress] {current}/{total}", file=sys.stderr, flush=True)
     except Exception:
         print(f"[progress] {current}/{total}", file=sys.stderr, flush=True)
+
+
 # endregion
 
 
@@ -177,13 +192,13 @@ def connect_powerbi(tenant_id: str, client_id: str, client_secret: str) -> str:
 async def publish_pbix_to_powerbi(
     file_path: str,
     group_id: str | None,
-    ctx: _Context | None = None,                 # ctx giờ là optional
+    ctx: _Context | None = None,  # ctx giờ là optional
     dataset_display_name: str | None = None,
-    name_conflict: str = "CreateOrOverwrite",    # "Abort", "Overwrite", "CreateOrOverwrite"
-    access_token: str | None = None,             # Nếu đã có token sẵn, ưu tiên dùng
-    poll: bool = True,                           # Chờ import xong rồi trả kết quả
+    name_conflict: str = "CreateOrOverwrite",  # "Abort", "Overwrite", "CreateOrOverwrite"
+    access_token: str | None = None,  # Nếu đã có token sẵn, ưu tiên dùng
+    poll: bool = True,  # Chờ import xong rồi trả kết quả
     poll_interval_sec: float = 2.0,
-    timeout_sec: int = 1800
+    timeout_sec: int = 1800,
 ) -> str:
     """
     Upload 1 file PBIX từ local lên Power BI Service (Import PBIX vào workspace).
@@ -269,8 +284,11 @@ async def publish_pbix_to_powerbi(
         import_url = f"{BASE_URL}/groups/{group_id_norm}/imports" if group_id_norm else f"{BASE_URL}/imports"
 
         file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
-        await _ctx_info(ctx, f"Uploading PBIX: {file_path} ({file_size_mb:.2f} MB) -> "
-                             f"{'workspace ' + group_id_norm if group_id_norm else 'My Workspace'}")
+        await _ctx_info(
+            ctx,
+            f"Uploading PBIX: {file_path} ({file_size_mb:.2f} MB) -> "
+            f"{'workspace ' + group_id_norm if group_id_norm else 'My Workspace'}",
+        )
         await _ctx_progress(ctx, 0, 100)
 
         dataset_display_name = dataset_display_name or os.path.splitext(os.path.basename(file_path))[0]
@@ -306,7 +324,7 @@ async def publish_pbix_to_powerbi(
         if resp.status_code not in (200, 201, 202):
             try:
                 err_json = resp.json()
-                msg = (err_json.get("error", {}).get("message") or err_json.get("message") or err_json)
+                msg = err_json.get("error", {}).get("message") or err_json.get("message") or err_json
             except Exception:
                 msg = resp.text
             return f"Error: Upload thất bại ({resp.status_code}). Chi tiết: {msg}"
@@ -322,8 +340,9 @@ async def publish_pbix_to_powerbi(
 
         # Poll trạng thái
         start = time.time()
-        status_url = (f"{BASE_URL}/groups/{group_id_norm}/imports/{import_id}"
-                      if group_id_norm else f"{BASE_URL}/imports/{import_id}")
+        status_url = (
+            f"{BASE_URL}/groups/{group_id_norm}/imports/{import_id}" if group_id_norm else f"{BASE_URL}/imports/{import_id}"
+        )
 
         last_progress = 95
         async with httpx.AsyncClient(timeout=None) as client:
@@ -360,7 +379,7 @@ async def publish_pbix_to_powerbi(
 
                 if import_state == "failed":
                     await _ctx_progress(ctx, 100, 100)
-                    failure_detail = (info.get("error") or info.get("failureReason") or info)
+                    failure_detail = info.get("error") or info.get("failureReason") or info
                     try:
                         failure_text = json.dumps(failure_detail, ensure_ascii=False)
                     except Exception:
@@ -375,6 +394,8 @@ async def publish_pbix_to_powerbi(
         print(f"[publish_pbix_to_powerbi] Upload error: {e}", file=sys.stderr, flush=True)
         traceback.print_exc(file=sys.stderr)
         return f"Error: {e}"
+
+
 # endregion
 
 
@@ -410,11 +431,3 @@ if __name__ == "__main__":
 # # region Main
 
 # # endregion
-
-
-
-
-
-
-
-

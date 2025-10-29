@@ -18,6 +18,7 @@ import requests
 from fastmcp import FastMCP
 from typing import Optional, List, Dict, Any
 import msal
+
 # endregion
 
 # region Configuration
@@ -28,6 +29,7 @@ FABRIC_API = "https://api.fabric.microsoft.com/v1"
 PBI_SCOPE = "https://analysis.windows.net/powerbi/api/.default"
 # endregion
 
+
 # region Auth (Service Principal)
 class _State:
     tenant_id: Optional[str] = None
@@ -37,7 +39,9 @@ class _State:
     access_token: Optional[str] = None
     expires_at: float = 0.0
 
+
 STATE = _State()
+
 
 def _init_app_from_env_if_possible():
     """
@@ -52,6 +56,7 @@ def _init_app_from_env_if_possible():
     if tid and cid and sec:
         _configure_sp(tid, cid, sec)
 
+
 def _configure_sp(tenant_id: str, client_id: str, client_secret: str):
     STATE.tenant_id = tenant_id.strip()
     STATE.client_id = client_id.strip()
@@ -64,6 +69,7 @@ def _configure_sp(tenant_id: str, client_id: str, client_secret: str):
     # Clear token cache
     STATE.access_token = None
     STATE.expires_at = 0.0
+
 
 def _ensure_token() -> str:
     """
@@ -97,15 +103,15 @@ def _ensure_token() -> str:
         STATE.expires_at = time.time() + 50 * 60
     return STATE.access_token
 
+
 def _auth_headers() -> Dict[str, str]:
     token = _ensure_token()
-    return {
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json"
-    }
+    return {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+
 
 session = requests.Session()
 # endregion
+
 
 # region HTTP helpers
 def make_request(url: str, method: str = "GET", data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
@@ -138,6 +144,7 @@ def make_request(url: str, method: str = "GET", data: Optional[Dict[str, Any]] =
     except Exception as e:
         return {"error": str(e)}
 
+
 def wait_for_operation(location_url: str, retry_seconds: int = 30) -> Dict[str, Any]:
     """
     Poll LRO đến khi Succeeded/Failed, luôn gửi kèm Authorization header hợp lệ.
@@ -161,7 +168,10 @@ def wait_for_operation(location_url: str, retry_seconds: int = 30) -> Dict[str, 
             return res.json() if res.ok else {"error": f"Failed to get result: {res.status_code}"}
         if status in ("Failed", "Error"):
             return {"error": data.get("error") or data}
+
+
 # endregion
+
 
 # region MCP Tool: connect SP
 @mcp.tool()
@@ -181,7 +191,10 @@ def connect_service_principal(tenant_id: str, client_id: str, client_secret: str
         STATE.expires_at = 0.0
         STATE.app = None
         return f"Error acquiring token: {e}"
+
+
 # endregion
+
 
 # region MCP Tools (unchanged behavior, now using SP auth)
 @mcp.tool()
@@ -192,7 +205,7 @@ def get_model_definition(
     page: Optional[int] = None,
     page_size: int = 10,
     metadata_only: bool = False,
-    file_range: Optional[str] = None
+    file_range: Optional[str] = None,
 ) -> str:
     """
     Get the TMDL definition of a semantic model with pagination and filtering support.
@@ -208,8 +221,8 @@ def get_model_definition(
 
     response = session.post(url, headers=headers)
     if response.status_code == 202:
-        location_header = response.headers.get('Location')
-        retry_after = int(response.headers.get('Retry-After', 30))
+        location_header = response.headers.get("Location")
+        retry_after = int(response.headers.get("Retry-After", 30))
         if location_header:
             result = wait_for_operation(location_header, retry_after)
         else:
@@ -227,7 +240,7 @@ def get_model_definition(
     if not all_parts:
         return "No model definition found"
 
-    tmdl_parts = [p for p in all_parts if p.get("path", "").endswith('.tmdl')]
+    tmdl_parts = [p for p in all_parts if p.get("path", "").endswith(".tmdl")]
 
     if file_filter:
         tmdl_parts = [p for p in tmdl_parts if file_filter.lower() in p.get("path", "").lower()]
@@ -244,7 +257,7 @@ def get_model_definition(
 
     if file_range:
         try:
-            start_file, end_file = map(int, file_range.split('-'))
+            start_file, end_file = map(int, file_range.split("-"))
             start_idx = start_file - 1
             end_idx = min(end_file, total_parts)
         except ValueError:
@@ -280,16 +293,11 @@ def get_model_definition(
             output.append(f"{marker} {i+1}. {part['path']}\n")
     else:
         import base64
+
         for part in page_parts:
             try:
-                content = base64.b64decode(part.get("payload", "")).decode('utf-8')
-                output.extend([
-                    f"\n{'─'*40}\n",
-                    f"File: {part['path']}\n",
-                    f"{'─'*40}\n",
-                    content,
-                    "\n"
-                ])
+                content = base64.b64decode(part.get("payload", "")).decode("utf-8")
+                output.extend([f"\n{'─'*40}\n", f"File: {part['path']}\n", f"{'─'*40}\n", content, "\n"])
             except Exception as e:
                 output.append(f"\nError decoding {part.get('path', 'unknown')}: {str(e)}\n")
 
@@ -327,7 +335,8 @@ def get_model_definition(
     output.append("\nTo see only file list, use metadata_only=True\n")
     output.append("To filter files, use file_filter='search_term'\n")
 
-    return ''.join(output)
+    return "".join(output)
+
 
 @mcp.tool()
 def execute_dax_query(workspace_id: str, dataset_id: str, query: str) -> str:
@@ -343,6 +352,8 @@ def execute_dax_query(workspace_id: str, dataset_id: str, query: str) -> str:
 
     results = result.get("results", [])
     return json.dumps(results[0]["tables"], indent=2) if results and "tables" in results[0] else "No data returned"
+
+
 # endregion
 
 # region Main
